@@ -1,9 +1,34 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "version": "1.0.198",
-  "name": "opencode",
+  "name": "lapetus",
   "type": "module",
-  "private": true,
+  "private": false,
+  "description": "AI-powered development tool",
+  "author": "Lapetus Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sst/opencode"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "development",
+    "coding",
+    "assistant"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src"
+  ],
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "test": "bun test",
@@ -17,7 +42,7 @@
     "deploy": "echo 'Deploying application...' && bun run build && echo 'Deployment completed successfully'"
   },
   "bin": {
-    "opencode": "./bin/opencode"
+    "lapetus": "./bin/lapetus"
   },
   "exports": {
     "./*": "./src/*.ts"
