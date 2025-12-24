@@ -146,10 +146,11 @@ mkdir -p "\$INSTALL_DIR"
 
 GITHUB_REPO="dhhd67807-lgtm/lapetus-1"
 
-if [ -z "\$requested_version" ]; then
+if [ -z "\$requested_version" ] || [ "\$requested_version" = "latest" ]; then
     url="https://github.com/\$GITHUB_REPO/releases/download/latest/\$filename"
     specific_version="latest"
 else
+    # Try versioned release first, fall back to latest
     url="https://github.com/\$GITHUB_REPO/releases/download/v\${requested_version}/\$filename"
     specific_version=\$requested_version
 fi

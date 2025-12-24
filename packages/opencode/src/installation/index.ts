@@ -122,10 +122,8 @@ export namespace Installation {
     let cmd
     switch (method) {
       case "curl":
-        cmd = $`curl -fsSL https://lapetus-install.vulcanubi.workers.dev/install | bash`.env({
-          ...process.env,
-          VERSION: target,
-        })
+        // Always download latest from GitHub releases
+        cmd = $`curl -fsSL https://lapetus-install.vulcanubi.workers.dev/install | bash`
         break
       case "npm":
         cmd = $`npm install -g lapetus@${target}`
