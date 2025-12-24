@@ -144,6 +144,18 @@ fi
 INSTALL_DIR=\$HOME/.lapetus/bin
 mkdir -p "\$INSTALL_DIR"
 
+# Clean up old installations from other locations
+echo -e "\${MUTED}Cleaning up old installations...\${NC}"
+rm -f "\$HOME/.bun/bin/lapetus" 2>/dev/null || true
+rm -f "\$HOME/.bun/bin/opencode" 2>/dev/null || true
+rm -f "\$HOME/.local/bin/lapetus" 2>/dev/null || true
+rm -f "\$HOME/.local/bin/opencode" 2>/dev/null || true
+rm -f "\$HOME/.opencode/bin/opencode" 2>/dev/null || true
+rm -rf "\$HOME/.opencode/bin" 2>/dev/null || true
+
+# Remove old lapetus binary before installing new one
+rm -f "\$INSTALL_DIR/lapetus" 2>/dev/null || true
+
 GITHUB_REPO="dhhd67807-lgtm/lapetus-1"
 
 if [ -z "\$requested_version" ] || [ "\$requested_version" = "latest" ]; then

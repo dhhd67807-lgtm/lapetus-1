@@ -119,6 +119,20 @@ export namespace Installation {
   }
 
   export async function upgrade(method: Method, target: string) {
+    // Clean up old installations first
+    const cleanupPaths = [
+      path.join(process.env.HOME || "", ".bun/bin/lapetus"),
+      path.join(process.env.HOME || "", ".bun/bin/opencode"),
+      path.join(process.env.HOME || "", ".local/bin/lapetus"),
+      path.join(process.env.HOME || "", ".local/bin/opencode"),
+      path.join(process.env.HOME || "", ".opencode/bin/opencode"),
+    ]
+    for (const p of cleanupPaths) {
+      try {
+        await Bun.file(p).exists() && (await $`rm -f ${p}`.quiet().nothrow())
+      } catch {}
+    }
+
     let cmd
     switch (method) {
       case "curl":
