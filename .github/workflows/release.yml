@@ -13,23 +13,19 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             target: linux-x64
-            artifact: lapetus-linux-x64.tar.gz
           - os: ubuntu-latest
             target: linux-arm64
-            artifact: lapetus-linux-arm64.tar.gz
           - os: macos-latest
             target: darwin-arm64
-            artifact: lapetus-darwin-arm64.zip
-          - os: macos-13
+          - os: macos-15-large
             target: darwin-x64
-            artifact: lapetus-darwin-x64.zip
           - os: windows-latest
             target: windows-x64
-            artifact: lapetus-windows-x64.zip
 
     runs-on: ${{ matrix.os }}
     
@@ -47,25 +43,50 @@ jobs:
       - name: Build binary
         run: |
           cd packages/opencode
-          bun build ./src/index.ts --compile --outfile lapetus
+          bun run build --single
         
-      - name: Package (Linux)
-        if: startsWith(matrix.target, 'linux')
+      - name: Rename and package (Linux)
+        if: runner.os == 'Linux'
         run: |
-          cd packages/opencode
-          tar -czvf ${{ matrix.artifact }} lapetus
+          cd packages/opencode/dist
+          for dir in lapetus-linux-*; do
+            if [ -d "$dir" ]; then
+              mv "$dir/bin/opencode" "$dir/bin/lapetus" 2>/dev/null || true
+              tar -czvf "${dir}.tar.gz" -C "$dir/bin" lapetus
+            fi
+          done
           
-      - name: Package (macOS/Windows)
-        if: "!startsWith(matrix.target, 'linux')"
+      - name: Rename and package (macOS)
+        if: runner.os == 'macOS'
         run: |
-          cd packages/opencode
-          zip ${{ matrix.artifact }} lapetus${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          cd packages/opencode/dist
+          for dir in lapetus-darwin-*; do
+            if [ -d "$dir" ]; then
+              mv "$dir/bin/opencode" "$dir/bin/lapetus" 2>/dev/null || true
+              zip -j "${dir}.zip" "$dir/bin/lapetus"
+            fi
+          done
 
-      - name: Upload artifact
+      - name: Rename and package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cd packages/opencode/dist
+          Get-ChildItem -Directory -Filter "lapetus-windows-*" | ForEach-Object {
+            $dir = $_.Name
+            if (Test-Path "$dir/bin/opencode.exe") {
+              Rename-Item "$dir/bin/opencode.exe" "lapetus.exe"
+            }
+            Compress-Archive -Path "$dir/bin/lapetus.exe" -DestinationPath "$dir.zip"
+          }
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
-          path: packages/opencode/${{ matrix.artifact }}
+          path: |
+            packages/opencode/dist/*.tar.gz
+            packages/opencode/dist/*.zip
 
   release:
     needs: build
@@ -87,6 +108,9 @@ jobs:
           else
             echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           fi
+
+      - name: List artifacts
+        run: find artifacts -type f
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
