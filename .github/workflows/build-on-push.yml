@@ -1,0 +1,82 @@
+name: Build on Push
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.5"
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./packages/opencode/package.json').version")
+          TIMESTAMP=$(date +%Y%m%d%H%M)
+          echo "version=${VERSION}-${TIMESTAMP}" >> $GITHUB_OUTPUT
+
+      - name: Build all platforms
+        run: |
+          cd packages/opencode
+          bun run build
+
+      - name: Rename binaries
+        run: |
+          cd packages/opencode/dist
+          for dir in lapetus-*; do
+            if [ -d "$dir" ]; then
+              if [ -f "$dir/bin/opencode" ]; then
+                mv "$dir/bin/opencode" "$dir/bin/lapetus"
+              fi
+              if [ -f "$dir/bin/opencode.exe" ]; then
+                mv "$dir/bin/opencode.exe" "$dir/bin/lapetus.exe"
+              fi
+            fi
+          done
+
+      - name: Package binaries
+        run: |
+          cd packages/opencode/dist
+          for dir in lapetus-linux-*; do
+            [ -d "$dir" ] && tar -czvf "${dir}.tar.gz" -C "$dir/bin" lapetus
+          done
+          for dir in lapetus-darwin-* lapetus-windows-*; do
+            if [ -d "$dir" ]; then
+              if [ -f "$dir/bin/lapetus.exe" ]; then
+                zip -j "${dir}.zip" "$dir/bin/lapetus.exe"
+              else
+                zip -j "${dir}.zip" "$dir/bin/lapetus"
+              fi
+            fi
+          done
+
+      - name: Delete old latest release
+        run: gh release delete latest --yes || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create latest release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: latest
+          name: Latest Build
+          prerelease: true
+          files: packages/opencode/dist/*.tar.gz,packages/opencode/dist/*.zip
+          body: |
+            Automatic build from commit ${{ github.sha }}
+            Version: ${{ steps.version.outputs.version }}

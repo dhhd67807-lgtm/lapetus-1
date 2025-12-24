@@ -147,12 +147,8 @@ mkdir -p "\$INSTALL_DIR"
 GITHUB_REPO="dhhd67807-lgtm/lapetus-1"
 
 if [ -z "\$requested_version" ]; then
-    url="https://github.com/\$GITHUB_REPO/releases/latest/download/\$filename"
-    specific_version=\$(curl -s https://api.github.com/repos/\$GITHUB_REPO/releases/latest | sed -n 's/.*"tag_name": *"v\\([^"]*\\)".*/\\1/p')
-    if [[ \$? -ne 0 || -z "\$specific_version" ]]; then
-        echo -e "\${RED}Failed to fetch version information\${NC}"
-        exit 1
-    fi
+    url="https://github.com/\$GITHUB_REPO/releases/download/latest/\$filename"
+    specific_version="latest"
 else
     url="https://github.com/\$GITHUB_REPO/releases/download/v\${requested_version}/\$filename"
     specific_version=\$requested_version
