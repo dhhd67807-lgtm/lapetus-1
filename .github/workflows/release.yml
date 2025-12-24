@@ -22,7 +22,7 @@ jobs:
             target: linux-arm64
           - os: macos-latest
             target: darwin-arm64
-          - os: macos-15-large
+          - os: macos-latest
             target: darwin-x64
           - os: windows-latest
             target: windows-x64
