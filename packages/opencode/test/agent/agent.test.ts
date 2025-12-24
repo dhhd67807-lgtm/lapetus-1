@@ -12,8 +12,8 @@ test("loads built-in agents when no custom agents configured", async () => {
     fn: async () => {
       const agents = await Agent.list()
       const names = agents.map((a) => a.name)
-      expect(names).toContain("build")
-      expect(names).toContain("plan")
+      expect(names).toContain("code")
+      expect(names).toContain("think")
     },
   })
 })
@@ -45,9 +45,9 @@ Helper subagent prompt`,
       expect(helper?.mode).toBe("subagent")
 
       // Built-in primary agents should still exist
-      const build = agents.find((a) => a.name === "build")
-      expect(build).toBeDefined()
-      expect(build?.mode).toBe("primary")
+      const code = agents.find((a) => a.name === "code")
+      expect(code).toBeDefined()
+      expect(code?.mode).toBe("primary")
     },
   })
 })

@@ -115,16 +115,18 @@ export namespace Agent {
     )
 
     const result: Record<string, Info> = {
-      build: {
-        name: "build",
+      code: {
+        name: "code",
+        color: "#e06c75",
         tools: { ...defaultTools },
         options: {},
         permission: agentPermission,
         mode: "primary",
         native: true,
       },
-      plan: {
-        name: "plan",
+      think: {
+        name: "think",
+        color: "#61afef",
         options: {},
         permission: planPermission,
         tools: {
@@ -255,14 +257,14 @@ export namespace Agent {
     }
 
     // Mark the default agent
-    const defaultName = cfg.default_agent ?? "build"
+    const defaultName = cfg.default_agent ?? "code"
     const defaultCandidate = result[defaultName]
     if (defaultCandidate && defaultCandidate.mode !== "subagent") {
       defaultCandidate.default = true
     } else {
-      // Fall back to "build" if configured default is invalid
-      if (result["build"]) {
-        result["build"].default = true
+      // Fall back to "code" if configured default is invalid
+      if (result["code"]) {
+        result["code"].default = true
       }
     }
 
@@ -288,7 +290,7 @@ export namespace Agent {
   export async function defaultAgent(): Promise<string> {
     const agents = await state()
     const defaultCandidate = Object.values(agents).find((a) => a.default)
-    return defaultCandidate?.name ?? "build"
+    return defaultCandidate?.name ?? "code"
   }
 
   export async function generate(input: { description: string; model?: { providerID: string; modelID: string } }) {

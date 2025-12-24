@@ -1015,8 +1015,8 @@ export namespace SessionPrompt {
         synthetic: true,
       })
     }
-    const wasPlan = input.messages.some((msg) => msg.info.role === "assistant" && msg.info.agent === "plan")
-    if (wasPlan && input.agent.name === "build") {
+    const wasPlan = input.messages.some((msg) => msg.info.role === "assistant" && msg.info.agent === "think")
+    if (wasPlan && input.agent.name === "code") {
       userMessage.parts.push({
         id: Identifier.ascending("part"),
         messageID: userMessage.info.id,
