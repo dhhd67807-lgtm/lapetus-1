@@ -587,6 +587,41 @@ export namespace Provider {
       }
     }
 
+    // Add Lapetus (iFlow) provider with qwen3-max
+    database["lapetus"] = {
+      id: "lapetus",
+      name: "Lapetus",
+      source: "custom",
+      env: ["LAPETUS_API_KEY"],
+      options: {
+        baseURL: "https://apis.iflow.cn/v1",
+      },
+      models: {
+        "qwen3-max": {
+          id: "qwen3-max",
+          providerID: "lapetus",
+          name: "Qwen3 Max",
+          family: "qwen",
+          attachment: false,
+          reasoning: false,
+          temperature: true,
+          tool_call: true,
+          api: {
+            id: "qwen3-max",
+            url: "https://apis.iflow.cn/v1",
+            npm: "@ai-sdk/openai-compatible",
+          },
+          options: {},
+          limit: {
+            context: 128000,
+            output: 8192,
+          },
+          release_date: "2025-01-01",
+          interleaved: false,
+        },
+      },
+    }
+
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
       if (existing) {
