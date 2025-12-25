@@ -535,10 +535,12 @@ export namespace Provider {
   }
 
   export function fromModelsDevProvider(provider: ModelsDev.Provider): Info {
+    // Override opencode provider name to Lapetus
+    const name = provider.id === "opencode" ? "Lapetus" : provider.name
     return {
       id: provider.id,
       source: "custom",
-      name: provider.name,
+      name,
       env: provider.env ?? [],
       options: {},
       models: mapValues(provider.models, (model) => fromModelsDevModel(provider, model)),
