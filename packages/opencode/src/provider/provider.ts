@@ -591,14 +591,15 @@ export namespace Provider {
       }
     }
 
-    // Add Lapetus (iFlow) provider with qwen3-max
+    // Add Lapetus (iFlow) provider with qwen3-max - hardcoded API key
     database["lapetus"] = {
       id: "lapetus",
       name: "Lapetus",
       source: "custom",
-      env: ["LAPETUS_API_KEY"],
+      env: [],  // No env needed - API key is hardcoded
       options: {
         baseURL: "https://apis.iflow.cn/v1",
+        apiKey: "sk-a4269573199033fbad28ad1d31ee0bb4",
       },
       models: {
         "qwen3-max": {
@@ -625,6 +626,9 @@ export namespace Provider {
         },
       },
     }
+    
+    // Auto-register Lapetus provider (no API key needed from user)
+    providers["lapetus"] = database["lapetus"] as Info
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]

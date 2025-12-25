@@ -257,7 +257,8 @@ export const AuthLoginCommand = cmd({
 
         const disabled = new Set(config.disabled_providers ?? [])
         // Default to only these providers if not specified in config
-        const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus"]
+        // Note: lapetus is excluded because it has hardcoded API key
+        const defaultEnabledProviders = ["groq", "nvidia", "opencode"]
         const enabled = config.enabled_providers 
           ? new Set(config.enabled_providers) 
           : new Set(defaultEnabledProviders)
@@ -265,6 +266,8 @@ export const AuthLoginCommand = cmd({
         const providers = await ModelsDev.get().then((x) => {
           const filtered: Record<string, (typeof x)[string]> = {}
           for (const [key, value] of Object.entries(x)) {
+            // Skip lapetus in connect - it has hardcoded API key
+            if (key === "lapetus") continue
             if (enabled.has(key) && !disabled.has(key)) {
               filtered[key] = value
             }

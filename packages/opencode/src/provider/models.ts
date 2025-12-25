@@ -80,13 +80,13 @@ export namespace ModelsDev {
     const result = await file.json().catch(() => {})
     const providers = result ? result as Record<string, Provider> : JSON.parse(await data()) as Record<string, Provider>
     
-    // Add Lapetus (iFlow) provider
+    // Add Lapetus (iFlow) provider - no env needed, API key is hardcoded
     providers["lapetus"] = {
       id: "lapetus",
       name: "Lapetus",
       api: "https://apis.iflow.cn/v1",
       npm: "@ai-sdk/openai-compatible",
-      env: ["LAPETUS_API_KEY"],
+      env: [],  // No env needed
       models: {
         "qwen3-max": {
           id: "qwen3-max",
