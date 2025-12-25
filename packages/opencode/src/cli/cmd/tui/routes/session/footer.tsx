@@ -63,9 +63,6 @@ export function Footer() {
                 {permissions().length > 1 ? "s" : ""}
               </text>
             </Show>
-            <text fg={theme.text}>
-              <span style={{ fg: theme.success }}>•</span> {lsp().length} LSP
-            </text>
             <Show when={mcp()}>
               <text fg={theme.text}>
                 <Switch>
@@ -79,7 +76,6 @@ export function Footer() {
                 {mcp()} MCP
               </text>
             </Show>
-            <text fg={theme.textMuted}>/status</text>
           </Match>
         </Switch>
       </box>
