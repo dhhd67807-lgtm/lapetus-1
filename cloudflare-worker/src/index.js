@@ -225,6 +225,92 @@ echo -e "lapetus       \${MUTED}# Run command\${NC}"
 echo -e ""
 `;
 
+const INSTALL_SCRIPT_PS1 = `#Requires -Version 5.1
+$ErrorActionPreference = "Stop"
+
+$APP = "lapetus"
+$GITHUB_REPO = "dhhd67807-lgtm/lapetus-1"
+
+Write-Host ""
+Write-Host "Lapetus Installer for Windows" -ForegroundColor Cyan
+Write-Host ""
+
+# Detect architecture
+$arch = if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" }
+if ($arch -eq "x86") {
+    Write-Host "Error: 32-bit Windows is not supported" -ForegroundColor Red
+    exit 1
+}
+
+$target = "windows-$arch"
+$filename = "$APP-$target.zip"
+$url = "https://github.com/$GITHUB_REPO/releases/download/latest/$filename"
+
+# Install directory
+$installDir = "$env:USERPROFILE\\.lapetus\\bin"
+if (-not (Test-Path $installDir)) {
+    New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+}
+
+# Clean up old installations
+Write-Host "Cleaning up old installations..." -ForegroundColor DarkGray
+Remove-Item "$env:USERPROFILE\\.bun\\bin\\lapetus.exe" -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\\.bun\\bin\\opencode.exe" -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\\.local\\bin\\lapetus.exe" -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\\.opencode\\bin\\opencode.exe" -ErrorAction SilentlyContinue
+Remove-Item "$installDir\\lapetus.exe" -ErrorAction SilentlyContinue
+
+Write-Host "Downloading lapetus..." -ForegroundColor DarkGray
+
+$tempDir = Join-Path $env:TEMP "lapetus_install_$(Get-Random)"
+New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+$zipPath = Join-Path $tempDir $filename
+
+try {
+    Invoke-WebRequest -Uri $url -OutFile $zipPath -UseBasicParsing
+} catch {
+    Write-Host "Error: Failed to download from $url" -ForegroundColor Red
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Extracting..." -ForegroundColor DarkGray
+Expand-Archive -Path $zipPath -DestinationPath $tempDir -Force
+
+# Move binary
+$exePath = Join-Path $tempDir "lapetus.exe"
+if (-not (Test-Path $exePath)) {
+    $exePath = Join-Path $tempDir "lapetus"
+}
+Move-Item -Path $exePath -Destination "$installDir\\lapetus.exe" -Force
+
+# Clean up
+Remove-Item -Path $tempDir -Recurse -Force
+
+# Add to PATH
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($userPath -notlike "*$installDir*") {
+    Write-Host "Adding to PATH..." -ForegroundColor DarkGray
+    [Environment]::SetEnvironmentVariable("Path", "$installDir;$userPath", "User")
+    $env:Path = "$installDir;$env:Path"
+}
+
+Write-Host ""
+Write-Host "██       █████  ██████  ███████ ████████ ██    ██ ███████" -ForegroundColor Magenta
+Write-Host "██      ██   ██ ██   ██ ██         ██    ██    ██ ██     " -ForegroundColor Magenta
+Write-Host "██      ███████ ██████  █████      ██    ██    ██ ███████" -ForegroundColor Magenta
+Write-Host "██      ██   ██ ██      ██         ██    ██    ██      ██" -ForegroundColor Magenta
+Write-Host "███████ ██   ██ ██      ███████    ██     ██████  ███████" -ForegroundColor Magenta
+Write-Host ""
+Write-Host "Installed successfully!" -ForegroundColor Green
+Write-Host ""
+Write-Host "To start:" -ForegroundColor DarkGray
+Write-Host "  cd <project>  # Open directory"
+Write-Host "  lapetus       # Run command"
+Write-Host ""
+Write-Host "Note: Restart your terminal for PATH changes to take effect." -ForegroundColor Yellow
+`;
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
@@ -237,8 +323,24 @@ export default {
         },
       });
     }
+
+    if (url.pathname === '/install.ps1') {
+      return new Response(INSTALL_SCRIPT_PS1, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'public, max-age=300',
+        },
+      });
+    }
     
-    return new Response('Lapetus - AI-powered development tool\n\nInstall: curl -fsSL ' + url.origin + '/install | bash', {
+    return new Response(`Lapetus - AI-powered development tool
+
+Install on macOS/Linux:
+  curl -fsSL ${url.origin}/install | bash
+
+Install on Windows (PowerShell):
+  irm ${url.origin}/install.ps1 | iex
+`, {
       headers: { 'Content-Type': 'text/plain' },
     });
   },
