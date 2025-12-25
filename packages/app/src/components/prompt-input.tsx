@@ -33,7 +33,7 @@ interface PromptInputProps {
 }
 
 const PLACEHOLDERS = [
-  "Fix a TODO in the codebase",
+  "Build something legendary...",
   "What is the tech stack of this project?",
   "Fix broken tests",
   "Explain how authentication works",

@@ -5,10 +5,28 @@
   //   "url": "https://enterprise.dev.opencode.ai",
   // },
   "instructions": ["STYLE_GUIDE.md"],
+  "enabled_providers": ["groq", "nvidia", "opencode", "lapetus"],
   "provider": {
     "opencode": {
+      "name": "Lapetus",
       "options": {},
     },
+    "lapetus": {
+      "name": "Lapetus",
+      "api": "https://apis.iflow.cn/v1",
+      "npm": "@ai-sdk/openai-compatible",
+      "env": ["LAPETUS_API_KEY"],
+      "options": {
+        "apiKey": "sk-a4269573199033fbad28ad1d31ee0bb4",
+        "baseURL": "https://apis.iflow.cn/v1"
+      },
+      "models": {
+        "qwen3-max": {
+          "name": "Qwen3 Max",
+          "id": "qwen3-max"
+        }
+      }
+    }
   },
   "mcp": {},
   "tools": {
