@@ -78,9 +78,35 @@ export namespace ModelsDev {
     refresh()
     const file = Bun.file(filepath)
     const result = await file.json().catch(() => {})
-    if (result) return result as Record<string, Provider>
-    const json = await data()
-    return JSON.parse(json) as Record<string, Provider>
+    const providers = result ? result as Record<string, Provider> : JSON.parse(await data()) as Record<string, Provider>
+    
+    // Add Lapetus (iFlow) provider
+    providers["lapetus"] = {
+      id: "lapetus",
+      name: "Lapetus",
+      api: "https://apis.iflow.cn/v1",
+      npm: "@ai-sdk/openai-compatible",
+      env: ["LAPETUS_API_KEY"],
+      models: {
+        "qwen3-max": {
+          id: "qwen3-max",
+          name: "Qwen3 Max",
+          family: "qwen",
+          attachment: false,
+          reasoning: false,
+          temperature: true,
+          tool_call: true,
+          release_date: "2025-01-01",
+          options: {},
+          limit: {
+            context: 128000,
+            output: 8192,
+          },
+        },
+      },
+    }
+    
+    return providers
   }
 
   export async function refresh() {

@@ -256,12 +256,16 @@ export const AuthLoginCommand = cmd({
         const config = await Config.get()
 
         const disabled = new Set(config.disabled_providers ?? [])
-        const enabled = config.enabled_providers ? new Set(config.enabled_providers) : undefined
+        // Default to only these providers if not specified in config
+        const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus"]
+        const enabled = config.enabled_providers 
+          ? new Set(config.enabled_providers) 
+          : new Set(defaultEnabledProviders)
 
         const providers = await ModelsDev.get().then((x) => {
           const filtered: Record<string, (typeof x)[string]> = {}
           for (const [key, value] of Object.entries(x)) {
-            if ((enabled ? enabled.has(key) : true) && !disabled.has(key)) {
+            if (enabled.has(key) && !disabled.has(key)) {
               filtered[key] = value
             }
           }
