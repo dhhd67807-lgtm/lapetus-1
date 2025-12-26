@@ -109,7 +109,7 @@ export namespace ModelsDev {
     // Add Lapetus NVIDIA provider - users can override API key via /connect
     providers["lapetus-nvidia"] = {
       id: "lapetus-nvidia",
-      name: "Lapetus NVIDIA",
+      name: "Lapetus",
       api: "https://integrate.api.nvidia.com/v1",
       npm: "@ai-sdk/openai-compatible",
       env: ["LAPETUS_NVIDIA_API_KEY"],

@@ -662,7 +662,7 @@ export namespace Provider {
     const nvidiaDefaultApiKey = "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"
     database["lapetus-nvidia"] = {
       id: "lapetus-nvidia",
-      name: "Lapetus NVIDIA",
+      name: "Lapetus",
       source: "custom",
       env: ["LAPETUS_NVIDIA_API_KEY"],
       options: {
