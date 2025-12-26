@@ -53,7 +53,7 @@ export function Footer() {
         <Switch>
           <Match when={store.welcome}>
             <text fg={theme.text}>
-              Get started <span style={{ fg: theme.textMuted }}>/connect</span>
+              Welcome to Lapetus
             </text>
           </Match>
           <Match when={connected()}>
