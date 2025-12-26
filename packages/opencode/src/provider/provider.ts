@@ -80,6 +80,22 @@ export namespace Provider {
         },
       }
     },
+    async lapetus() {
+      return {
+        autoload: true,
+        options: {
+          includeUsage: false,
+        },
+      }
+    },
+    async "lapetus-nvidia"() {
+      return {
+        autoload: true,
+        options: {
+          includeUsage: false,
+        },
+      }
+    },
     async opencode(input) {
       const hasKey = await (async () => {
         const env = Env.all()
