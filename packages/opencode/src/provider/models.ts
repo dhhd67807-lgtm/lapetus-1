@@ -86,27 +86,19 @@ export namespace ModelsDev {
       name: "Lapetus",
       api: "https://apis.iflow.cn/v1",
       npm: "@ai-sdk/openai-compatible",
-      env: [],  // No env needed
+      env: [],
       models: {
-        "qwen3-max": {
-          id: "qwen3-max",
-          name: "Qwen3 Max",
-          family: "qwen",
-          attachment: false,
-          reasoning: false,
-          temperature: true,
-          tool_call: true,
-          release_date: "2025-01-01",
-          options: {},
-          limit: {
-            context: 128000,
-            output: 8192,
-          },
-        },
+        "qwen3-coder-plus": { id: "qwen3-coder-plus", name: "Qwen3 Coder Plus", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "qwen3-max-preview": { id: "qwen3-max-preview", name: "Qwen3 Max Preview", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "glm-4.6": { id: "glm-4.6", name: "GLM 4.6", family: "glm", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "deepseek-v3.2": { id: "deepseek-v3.2", name: "DeepSeek V3.2", family: "deepseek", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "qwen3-235b-a22b-thinking-2507": { id: "qwen3-235b-a22b-thinking-2507", name: "Qwen3 235B Thinking", family: "qwen", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "qwen3-235b-a22b-instruct": { id: "qwen3-235b-a22b-instruct", name: "Qwen3 235B Instruct", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "qwen3-235b": { id: "qwen3-235b", name: "Qwen3 235B", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
       },
     }
 
-    // Add Lapetus NVIDIA provider - users can override API key via /connect
+    // Add Lapetus NVIDIA provider
     providers["lapetus-nvidia"] = {
       id: "lapetus-nvidia",
       name: "Lapetus",
@@ -114,42 +106,14 @@ export namespace ModelsDev {
       npm: "@ai-sdk/openai-compatible",
       env: ["LAPETUS_NVIDIA_API_KEY"],
       models: {
-        "deepseek-ai/deepseek-v3.2": {
-          id: "deepseek-ai/deepseek-v3.2",
-          name: "DeepSeek V3.2",
-          family: "deepseek",
-          attachment: false,
-          reasoning: true,
-          temperature: true,
-          tool_call: true,
-          release_date: "2025-01-01",
-          options: {},
-          limit: { context: 128000, output: 8192 },
-        },
-        "meta/llama-3.3-70b-instruct": {
-          id: "meta/llama-3.3-70b-instruct",
-          name: "Llama 3.3 70B",
-          family: "llama",
-          attachment: false,
-          reasoning: false,
-          temperature: true,
-          tool_call: true,
-          release_date: "2025-01-01",
-          options: {},
-          limit: { context: 128000, output: 4096 },
-        },
-        "qwen/qwen2.5-72b-instruct": {
-          id: "qwen/qwen2.5-72b-instruct",
-          name: "Qwen 2.5 72B",
-          family: "qwen",
-          attachment: false,
-          reasoning: false,
-          temperature: true,
-          tool_call: true,
-          release_date: "2025-01-01",
-          options: {},
-          limit: { context: 128000, output: 4096 },
-        },
+        "deepseek-ai/deepseek-v3.2": { id: "deepseek-ai/deepseek-v3.2", name: "DeepSeek V3.2 (NVIDIA)", family: "deepseek", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "mistralai/mistral-large-3-675b-instruct-2512": { id: "mistralai/mistral-large-3-675b-instruct-2512", name: "Mistral Large 3 675B", family: "mistral", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "minimaxai/minimax-m2": { id: "minimaxai/minimax-m2", name: "MiniMax M2", family: "minimax", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "moonshotai/kimi-k2-instruct-0905": { id: "moonshotai/kimi-k2-instruct-0905", name: "Kimi K2 Instruct 0905", family: "kimi", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "moonshotai/kimi-k2-thinking": { id: "moonshotai/kimi-k2-thinking", name: "Kimi K2 Thinking", family: "kimi", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "deepseek-ai/deepseek-v3.1-terminus": { id: "deepseek-ai/deepseek-v3.1-terminus", name: "DeepSeek V3.1 Terminus", family: "deepseek", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "qwen/qwen3-coder-480b-a35b-instruct": { id: "qwen/qwen3-coder-480b-a35b-instruct", name: "Qwen3 Coder 480B", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "moonshotai/kimi-k2-instruct": { id: "moonshotai/kimi-k2-instruct", name: "Kimi K2 Instruct", family: "kimi", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
       },
     }
     
