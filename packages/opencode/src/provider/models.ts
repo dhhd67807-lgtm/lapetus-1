@@ -105,6 +105,53 @@ export namespace ModelsDev {
         },
       },
     }
+
+    // Add Lapetus NVIDIA provider - users can override API key via /connect
+    providers["lapetus-nvidia"] = {
+      id: "lapetus-nvidia",
+      name: "Lapetus NVIDIA",
+      api: "https://integrate.api.nvidia.com/v1",
+      npm: "@ai-sdk/openai-compatible",
+      env: ["LAPETUS_NVIDIA_API_KEY"],
+      models: {
+        "deepseek-ai/deepseek-v3.2": {
+          id: "deepseek-ai/deepseek-v3.2",
+          name: "DeepSeek V3.2",
+          family: "deepseek",
+          attachment: false,
+          reasoning: true,
+          temperature: true,
+          tool_call: true,
+          release_date: "2025-01-01",
+          options: {},
+          limit: { context: 128000, output: 8192 },
+        },
+        "meta/llama-3.3-70b-instruct": {
+          id: "meta/llama-3.3-70b-instruct",
+          name: "Llama 3.3 70B",
+          family: "llama",
+          attachment: false,
+          reasoning: false,
+          temperature: true,
+          tool_call: true,
+          release_date: "2025-01-01",
+          options: {},
+          limit: { context: 128000, output: 4096 },
+        },
+        "qwen/qwen2.5-72b-instruct": {
+          id: "qwen/qwen2.5-72b-instruct",
+          name: "Qwen 2.5 72B",
+          family: "qwen",
+          attachment: false,
+          reasoning: false,
+          temperature: true,
+          tool_call: true,
+          release_date: "2025-01-01",
+          options: {},
+          limit: { context: 128000, output: 4096 },
+        },
+      },
+    }
     
     return providers
   }

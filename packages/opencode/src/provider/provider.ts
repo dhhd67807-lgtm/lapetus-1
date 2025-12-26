@@ -555,7 +555,7 @@ export namespace Provider {
 
     const disabled = new Set(config.disabled_providers ?? [])
     // Default to only these providers if not specified in config
-    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus"]
+    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia"]
     const enabled = config.enabled_providers 
       ? new Set(config.enabled_providers) 
       : new Set(defaultEnabledProviders)
@@ -657,6 +657,108 @@ export namespace Provider {
     
     // Auto-register Lapetus provider (no API key needed from user)
     providers["lapetus"] = database["lapetus"] as Info
+
+    // Add Lapetus NVIDIA provider with default API key (users can override via /connect)
+    const nvidiaDefaultApiKey = "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"
+    database["lapetus-nvidia"] = {
+      id: "lapetus-nvidia",
+      name: "Lapetus NVIDIA",
+      source: "custom",
+      env: ["LAPETUS_NVIDIA_API_KEY"],
+      options: {
+        baseURL: "https://integrate.api.nvidia.com/v1",
+        apiKey: nvidiaDefaultApiKey,
+      },
+      models: {
+        "deepseek-ai/deepseek-v3.2": {
+          id: "deepseek-ai/deepseek-v3.2",
+          providerID: "lapetus-nvidia",
+          name: "DeepSeek V3.2",
+          family: "deepseek",
+          attachment: false,
+          reasoning: true,
+          temperature: true,
+          tool_call: true,
+          api: {
+            id: "deepseek-ai/deepseek-v3.2",
+            url: "https://integrate.api.nvidia.com/v1",
+            npm: "@ai-sdk/openai-compatible",
+          },
+          options: {},
+          limit: { context: 128000, output: 8192 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: {
+            input: { text: true, audio: false, image: false, video: false, pdf: false },
+            output: { text: true, audio: false, image: false, video: false, pdf: false },
+            temperature: true,
+            tool_call: true,
+            interleaved: false,
+          },
+          headers: {},
+          release_date: "2025-01-01",
+          interleaved: false,
+        },
+        "meta/llama-3.3-70b-instruct": {
+          id: "meta/llama-3.3-70b-instruct",
+          providerID: "lapetus-nvidia",
+          name: "Llama 3.3 70B",
+          family: "llama",
+          attachment: false,
+          reasoning: false,
+          temperature: true,
+          tool_call: true,
+          api: {
+            id: "meta/llama-3.3-70b-instruct",
+            url: "https://integrate.api.nvidia.com/v1",
+            npm: "@ai-sdk/openai-compatible",
+          },
+          options: {},
+          limit: { context: 128000, output: 4096 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: {
+            input: { text: true, audio: false, image: false, video: false, pdf: false },
+            output: { text: true, audio: false, image: false, video: false, pdf: false },
+            temperature: true,
+            tool_call: true,
+            interleaved: false,
+          },
+          headers: {},
+          release_date: "2025-01-01",
+          interleaved: false,
+        },
+        "qwen/qwen2.5-72b-instruct": {
+          id: "qwen/qwen2.5-72b-instruct",
+          providerID: "lapetus-nvidia",
+          name: "Qwen 2.5 72B",
+          family: "qwen",
+          attachment: false,
+          reasoning: false,
+          temperature: true,
+          tool_call: true,
+          api: {
+            id: "qwen/qwen2.5-72b-instruct",
+            url: "https://integrate.api.nvidia.com/v1",
+            npm: "@ai-sdk/openai-compatible",
+          },
+          options: {},
+          limit: { context: 128000, output: 4096 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: {
+            input: { text: true, audio: false, image: false, video: false, pdf: false },
+            output: { text: true, audio: false, image: false, video: false, pdf: false },
+            temperature: true,
+            tool_call: true,
+            interleaved: false,
+          },
+          headers: {},
+          release_date: "2025-01-01",
+          interleaved: false,
+        },
+      },
+    }
+    
+    // Auto-register Lapetus NVIDIA provider with default API key
+    providers["lapetus-nvidia"] = database["lapetus-nvidia"] as Info
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
