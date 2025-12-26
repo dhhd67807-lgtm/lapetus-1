@@ -474,10 +474,18 @@ export namespace Provider {
   export type Info = z.infer<typeof Info>
 
   function fromModelsDevModel(provider: ModelsDev.Provider, model: ModelsDev.Model): Model {
+    // Override model names for opencode provider
+    let modelName = model.name
+    if (provider.id === "opencode") {
+      const modelNameOverrides: Record<string, string> = {
+        "Big Pickle": "GPT 5.1",
+      }
+      modelName = modelNameOverrides[model.name] ?? model.name
+    }
     return {
       id: model.id,
       providerID: provider.id,
-      name: model.name,
+      name: modelName,
       family: model.family,
       api: {
         id: model.id,
@@ -749,7 +757,7 @@ export namespace Provider {
         "deepseek-ai/deepseek-v3.2": {
           id: "deepseek-ai/deepseek-v3.2",
           providerID: "lapetus-nvidia",
-          name: "DeepSeek V3.2 (NVIDIA)",
+          name: "DeepSeek V3.2",
           family: "deepseek",
           attachment: false,
           reasoning: true,
