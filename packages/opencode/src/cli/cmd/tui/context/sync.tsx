@@ -368,11 +368,14 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           return last.time.completed ? "idle" : "working"
         },
         async sync(sessionID: string) {
+          debugLog(`sync called: sessionID=${sessionID}`)
           log.info("sync called", { sessionID })
           if (fullSyncedSessions.has(sessionID)) {
+            debugLog(`sync: Session already synced, skipping`)
             log.info("Session already synced, skipping", { sessionID })
             return
           }
+          debugLog(`sync: Fetching session data...`)
           log.info("Fetching session data...", { sessionID })
           const [session, messages, todo, diff] = await Promise.all([
             sdk.client.session.get({ sessionID }, { throwOnError: true }),
@@ -380,7 +383,19 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             sdk.client.session.todo({ sessionID }),
             sdk.client.session.diff({ sessionID }),
           ])
+          debugLog(`sync: Fetched messages count=${messages.data?.length ?? 0}`)
           log.info("Fetched messages", { sessionID, count: messages.data?.length ?? 0 })
+          
+          // Log existing messages before merge
+          const existingMsgsBefore = store.message[sessionID] ?? []
+          debugLog(`sync: Existing messages before merge: ${existingMsgsBefore.map(m => `${m.id}(${m.role})`).join(", ")}`)
+          
+          // Log existing parts before merge
+          for (const msg of existingMsgsBefore) {
+            const parts = store.part[msg.id] ?? []
+            debugLog(`sync: Existing parts for ${msg.id}: ${parts.map(p => `${p.id}(${p.type})`).join(", ")}`)
+          }
+          
           setStore(
             produce((draft) => {
               const match = Binary.search(draft.session, sessionID, (s) => s.id)
@@ -428,6 +443,10 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
               draft.session_diff[sessionID] = diff.data ?? []
             }),
           )
+          
+          // Log messages after merge
+          const existingMsgsAfter = store.message[sessionID] ?? []
+          debugLog(`sync: Messages after merge: ${existingMsgsAfter.map(m => `${m.id}(${m.role})`).join(", ")}`)
           fullSyncedSessions.add(sessionID)
         },
       },
