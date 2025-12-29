@@ -100,7 +100,7 @@ export namespace Provider {
     },
     async ayechat() {
       return {
-        autoload: false,
+        autoload: true,  // Auto-enable since we have a default token
         async getModel(sdk: any, modelID: string) {
           return sdk.languageModel(modelID)
         },

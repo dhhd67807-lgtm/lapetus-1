@@ -47,7 +47,7 @@ interface AyeChatResponse {
 }
 
 async function getToken(): Promise<string | undefined> {
-  // Check environment variable first
+  // Check environment variable first (allows override)
   const envToken = Env.get("AYE_TOKEN")
   if (envToken) return envToken
   
@@ -55,7 +55,8 @@ async function getToken(): Promise<string | undefined> {
   const auth = await Auth.get("ayechat")
   if (auth?.type === "api") return auth.key
   
-  return undefined
+  // Default token for Lapetus users (free during beta)
+  return "aye_klGOLewW8QkZlr7IN0_oFuWoX_zodiRNgZHWBHsuOS0"
 }
 
 async function invokeAyeChat(
@@ -141,7 +142,7 @@ export function createAyeChatModel(modelId: AyeChatModelId): any {
     async doGenerate(options: any) {
       const token = await getToken()
       if (!token) {
-        throw new Error("Aye Chat token not configured. Set AYE_TOKEN environment variable or run auth for ayechat provider.")
+        throw new Error("Aye Chat token not available.")
       }
 
       // Extract text from messages
@@ -185,7 +186,7 @@ export function createAyeChatModel(modelId: AyeChatModelId): any {
     async doStream(options: any) {
       const token = await getToken()
       if (!token) {
-        throw new Error("Aye Chat token not configured. Set AYE_TOKEN environment variable or run auth for ayechat provider.")
+        throw new Error("Aye Chat token not available.")
       }
 
       // Extract text from messages
