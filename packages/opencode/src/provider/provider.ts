@@ -623,7 +623,7 @@ export namespace Provider {
       env: [],  // No env needed - API key is hardcoded
       options: {
         baseURL: "https://apis.iflow.cn/v1",
-        apiKey: "sk-a4269573199033fbad28ad1d31ee0bb4",
+        apiKey: "sk-abaa68619d111f4217821a6735a43d2f",
       },
       models: {
         "qwen3-coder-plus": {

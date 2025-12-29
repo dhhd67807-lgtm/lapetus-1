@@ -20,8 +20,8 @@ Options:
         --no-modify-path    Don't modify shell config files (.zshrc, .bashrc, etc.)
 
 Examples:
-    curl -fsSL https://lapetus.ai/install | bash
-    curl -fsSL https://lapetus.ai/install | bash -s -- --version 1.0.180
+    curl -fsSL https://lapetus-install.vulcanubi.workers.dev/install | bash
+    curl -fsSL https://lapetus-install.vulcanubi.workers.dev/install | bash -s -- --version 1.0.180
 EOF
 }
 

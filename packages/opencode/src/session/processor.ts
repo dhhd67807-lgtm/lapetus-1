@@ -49,6 +49,7 @@ export namespace SessionProcessor {
             const stream = await LLM.stream(streamInput)
 
             for await (const value of stream.fullStream) {
+              log.info("stream event", { type: value.type })
               input.abort.throwIfAborted()
               switch (value.type) {
                 case "start":
@@ -75,9 +76,11 @@ export namespace SessionProcessor {
                 case "reasoning-delta":
                   if (value.id in reasoningMap) {
                     const part = reasoningMap[value.id]
+                    const isFirstDelta = part.text === ""
                     part.text += value.text
                     if (value.providerMetadata) part.metadata = value.providerMetadata
-                    if (part.text) await Session.updatePart({ part, delta: value.text })
+                    // Always update on first delta to ensure UI shows the response immediately
+                    if (part.text || isFirstDelta) await Session.updatePart({ part, delta: value.text })
                   }
                   break
 
@@ -297,9 +300,11 @@ export namespace SessionProcessor {
 
                 case "text-delta":
                   if (currentText) {
+                    const isFirstDelta = currentText.text === ""
                     currentText.text += value.text
                     if (value.providerMetadata) currentText.metadata = value.providerMetadata
-                    if (currentText.text)
+                    // Always update on first delta to ensure UI shows the response immediately
+                    if (currentText.text || isFirstDelta)
                       await Session.updatePart({
                         part: currentText,
                         delta: value.text,

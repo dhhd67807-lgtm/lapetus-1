@@ -17,7 +17,7 @@
       "npm": "@ai-sdk/openai-compatible",
       "env": ["LAPETUS_API_KEY"],
       "options": {
-        "apiKey": "sk-a4269573199033fbad28ad1d31ee0bb4",
+        "apiKey": "sk-abaa68619d111f4217821a6735a43d2f",
         "baseURL": "https://apis.iflow.cn/v1"
       },
       "models": {
