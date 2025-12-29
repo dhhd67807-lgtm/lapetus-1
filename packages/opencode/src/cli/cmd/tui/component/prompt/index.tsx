@@ -590,6 +590,8 @@ export function Prompt(props: PromptProps) {
         messageID,
       })
     } else {
+      // For new sessions, we need to navigate immediately and let events handle the response
+      // For existing sessions, just fire and forget
       sdk.client.session.prompt({
         sessionID,
         ...selectedModel,
@@ -621,14 +623,14 @@ export function Prompt(props: PromptProps) {
     setStore("extmarkToPartIndex", new Map())
     props.onSubmit?.()
 
-    // temporary hack to make sure the message is sent
-    if (!props.sessionID)
-      setTimeout(() => {
-        route.navigate({
-          type: "session",
-          sessionID,
-        })
-      }, 50)
+    // Navigate to session immediately for new sessions
+    // The sync will handle fetching messages via events
+    if (!props.sessionID) {
+      route.navigate({
+        type: "session",
+        sessionID,
+      })
+    }
     input.clear()
   }
   const exit = useExit()

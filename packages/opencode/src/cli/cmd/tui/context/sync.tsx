@@ -173,16 +173,20 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
         }
 
         case "message.updated": {
+          console.log("[SYNC] message.updated event received", { sessionID: event.properties.info.sessionID, messageID: event.properties.info.id, role: event.properties.info.role })
           const messages = store.message[event.properties.info.sessionID]
           if (!messages) {
+            console.log("[SYNC] No existing messages, creating new array")
             setStore("message", event.properties.info.sessionID, [event.properties.info])
             break
           }
           const result = Binary.search(messages, event.properties.info.id, (m) => m.id)
           if (result.found) {
+            console.log("[SYNC] Message found, updating")
             setStore("message", event.properties.info.sessionID, result.index, reconcile(event.properties.info))
             break
           }
+          console.log("[SYNC] Message not found, inserting")
           setStore(
             "message",
             event.properties.info.sessionID,
@@ -208,16 +212,20 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           break
         }
         case "message.part.updated": {
+          console.log("[SYNC] message.part.updated event received", { messageID: event.properties.part.messageID, partID: event.properties.part.id, type: event.properties.part.type })
           const parts = store.part[event.properties.part.messageID]
           if (!parts) {
+            console.log("[SYNC] No existing parts, creating new array")
             setStore("part", event.properties.part.messageID, [event.properties.part])
             break
           }
           const result = Binary.search(parts, event.properties.part.id, (p) => p.id)
           if (result.found) {
+            console.log("[SYNC] Part found, updating")
             setStore("part", event.properties.part.messageID, result.index, reconcile(event.properties.part))
             break
           }
+          console.log("[SYNC] Part not found, inserting")
           setStore(
             "part",
             event.properties.part.messageID,
@@ -342,13 +350,19 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           return last.time.completed ? "idle" : "working"
         },
         async sync(sessionID: string) {
-          if (fullSyncedSessions.has(sessionID)) return
+          console.log("[SYNC] sync called for session", sessionID)
+          if (fullSyncedSessions.has(sessionID)) {
+            console.log("[SYNC] Session already synced, skipping")
+            return
+          }
+          console.log("[SYNC] Fetching session data...")
           const [session, messages, todo, diff] = await Promise.all([
             sdk.client.session.get({ sessionID }, { throwOnError: true }),
             sdk.client.session.messages({ sessionID, limit: 100 }),
             sdk.client.session.todo({ sessionID }),
             sdk.client.session.diff({ sessionID }),
           ])
+          console.log("[SYNC] Fetched", messages.data?.length ?? 0, "messages")
           setStore(
             produce((draft) => {
               const match = Binary.search(draft.session, sessionID, (s) => s.id)
