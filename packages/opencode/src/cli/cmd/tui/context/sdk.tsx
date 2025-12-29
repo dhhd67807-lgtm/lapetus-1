@@ -2,23 +2,11 @@ import { createOpencodeClient, type Event } from "@opencode-ai/sdk/v2"
 import { createSimpleContext } from "./helper"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"
 import { batch, onCleanup, onMount } from "solid-js"
-import { Log } from "@/util/log"
-
-const log = Log.create({ service: "tui.sdk" })
-
-// Direct file logging for debugging
-const debugWriter = Bun.file("/tmp/tui-sdk-debug.log").writer()
-function debugLog(msg: string) {
-  debugWriter.write(`[${new Date().toISOString()}] ${msg}\n`)
-  debugWriter.flush()
-}
 
 export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
   name: "SDK",
   init: (props: { url: string }) => {
     const abort = new AbortController()
-    debugLog(`Creating SDK client with url: ${props.url}`)
-    log.info("Creating SDK client", { url: props.url })
     const sdk = createOpencodeClient({
       baseUrl: props.url,
       signal: abort.signal,
@@ -29,24 +17,14 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
     }>()
 
     onMount(async () => {
-      debugLog("SDK onMount - starting event subscription")
-      log.info("SDK onMount - starting event subscription")
       while (true) {
-        if (abort.signal.aborted) {
-          debugLog("Abort signal received, stopping event loop")
-          log.info("Abort signal received, stopping event loop")
-          break
-        }
-        debugLog("Subscribing to events...")
-        log.info("Subscribing to events...")
+        if (abort.signal.aborted) break
         const events = await sdk.event.subscribe(
           {},
           {
             signal: abort.signal,
           },
         )
-        debugLog("Event subscription established")
-        log.info("Event subscription established")
         let queue: Event[] = []
         let timer: Timer | undefined
         let last = 0
@@ -57,8 +35,6 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
           queue = []
           timer = undefined
           last = Date.now()
-          debugLog(`Flushing events: count=${events.length}, types=${events.map(e => e.type).join(",")}`)
-          log.info("Flushing events", { count: events.length, types: events.map(e => e.type) })
           // Batch all event emissions so all store updates result in a single render
           batch(() => {
             for (const event of events) {
@@ -68,8 +44,6 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
         }
 
         for await (const event of events.stream) {
-          debugLog(`Event received from stream: type=${event.type}`)
-          log.info("Event received from stream", { type: event.type })
           queue.push(event)
           const elapsed = Date.now() - last
 
@@ -88,14 +62,10 @@ export const { use: useSDK, provider: SDKProvider } = createSimpleContext({
         if (queue.length > 0) {
           flush()
         }
-        debugLog("Event stream ended, will reconnect...")
-        log.info("Event stream ended, will reconnect...")
       }
     })
 
     onCleanup(() => {
-      debugLog("SDK cleanup - aborting")
-      log.info("SDK cleanup - aborting")
       abort.abort()
     })
 

@@ -29,13 +29,6 @@ import type { Path } from "@opencode-ai/sdk"
 
 const log = Log.create({ service: "tui.sync" })
 
-// Direct file logging for debugging
-const debugWriter = Bun.file("/tmp/tui-sync-debug.log").writer()
-function debugLog(msg: string) {
-  debugWriter.write(`[${new Date().toISOString()}] ${msg}\n`)
-  debugWriter.flush()
-}
-
 export const { use: useSync, provider: SyncProvider } = createSimpleContext({
   name: "Sync",
   init: () => {
@@ -105,10 +98,8 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
 
     sdk.event.listen((e) => {
       const event = e.details
-      debugLog(`Event listener received: type=${event.type}`)
       switch (event.type) {
         case "permission.updated": {
-          debugLog(`permission.updated: sessionID=${event.properties.sessionID}`)
           const permissions = store.permission[event.properties.sessionID]
           if (!permissions) {
             setStore("permission", event.properties.sessionID, [event.properties])
@@ -164,7 +155,6 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           break
         }
         case "session.updated": {
-          debugLog(`session.updated: sessionID=${event.properties.info.id}`)
           const result = Binary.search(store.session, event.properties.info.id, (s) => s.id)
           if (result.found) {
             setStore("session", result.index, reconcile(event.properties.info))
@@ -180,29 +170,24 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
         }
 
         case "session.status": {
-          debugLog(`session.status: sessionID=${event.properties.sessionID}, status=${JSON.stringify(event.properties.status)}`)
           setStore("session_status", event.properties.sessionID, event.properties.status)
           break
         }
 
         case "message.updated": {
-          debugLog(`message.updated: sessionID=${event.properties.info.sessionID}, messageID=${event.properties.info.id}, role=${event.properties.info.role}`)
           log.info("message.updated event received", { sessionID: event.properties.info.sessionID, messageID: event.properties.info.id, role: event.properties.info.role })
           const messages = store.message[event.properties.info.sessionID]
           if (!messages) {
-            debugLog(`message.updated: No existing messages, creating new array`)
             log.info("No existing messages, creating new array")
             setStore("message", event.properties.info.sessionID, [event.properties.info])
             break
           }
           const result = Binary.search(messages, event.properties.info.id, (m) => m.id)
           if (result.found) {
-            debugLog(`message.updated: Message found at index ${result.index}, updating`)
             log.info("Message found, updating")
             setStore("message", event.properties.info.sessionID, result.index, reconcile(event.properties.info))
             break
           }
-          debugLog(`message.updated: Message not found, inserting at index ${result.index}`)
           log.info("Message not found, inserting")
           setStore(
             "message",
@@ -229,7 +214,6 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           break
         }
         case "message.part.updated": {
-          debugLog(`message.part.updated: messageID=${event.properties.part.messageID}, partID=${event.properties.part.id}, type=${event.properties.part.type}`)
           log.info("message.part.updated event received", { messageID: event.properties.part.messageID, partID: event.properties.part.id, type: event.properties.part.type })
           const parts = store.part[event.properties.part.messageID]
           if (!parts) {
@@ -368,14 +352,11 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
           return last.time.completed ? "idle" : "working"
         },
         async sync(sessionID: string) {
-          debugLog(`sync called: sessionID=${sessionID}`)
           log.info("sync called", { sessionID })
           if (fullSyncedSessions.has(sessionID)) {
-            debugLog(`sync: Session already synced, skipping`)
             log.info("Session already synced, skipping", { sessionID })
             return
           }
-          debugLog(`sync: Fetching session data...`)
           log.info("Fetching session data...", { sessionID })
           const [session, messages, todo, diff] = await Promise.all([
             sdk.client.session.get({ sessionID }, { throwOnError: true }),
@@ -383,18 +364,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
             sdk.client.session.todo({ sessionID }),
             sdk.client.session.diff({ sessionID }),
           ])
-          debugLog(`sync: Fetched messages count=${messages.data?.length ?? 0}`)
           log.info("Fetched messages", { sessionID, count: messages.data?.length ?? 0 })
-          
-          // Log existing messages before merge
-          const existingMsgsBefore = store.message[sessionID] ?? []
-          debugLog(`sync: Existing messages before merge: ${existingMsgsBefore.map(m => `${m.id}(${m.role})`).join(", ")}`)
-          
-          // Log existing parts before merge
-          for (const msg of existingMsgsBefore) {
-            const parts = store.part[msg.id] ?? []
-            debugLog(`sync: Existing parts for ${msg.id}: ${parts.map(p => `${p.id}(${p.type})`).join(", ")}`)
-          }
           
           setStore(
             produce((draft) => {
@@ -443,10 +413,6 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
               draft.session_diff[sessionID] = diff.data ?? []
             }),
           )
-          
-          // Log messages after merge
-          const existingMsgsAfter = store.message[sessionID] ?? []
-          debugLog(`sync: Messages after merge: ${existingMsgsAfter.map(m => `${m.id}(${m.role})`).join(", ")}`)
           fullSyncedSessions.add(sessionID)
         },
       },

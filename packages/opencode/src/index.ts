@@ -58,12 +58,6 @@ const cli = yargs(hideBin(process.argv))
     choices: ["DEBUG", "INFO", "WARN", "ERROR"],
   })
   .middleware(async (opts) => {
-    // Debug: write directly to a file to verify middleware is running
-    const debugFile = Bun.file("/tmp/lapetus-debug.log")
-    const writer = debugFile.writer()
-    writer.write(`[${new Date().toISOString()}] Middleware starting, args: ${process.argv.join(" ")}\n`)
-    writer.flush()
-    
     await Log.init({
       print: process.argv.includes("--print-logs"),
       dev: Installation.isLocal(),
@@ -74,9 +68,6 @@ const cli = yargs(hideBin(process.argv))
       })(),
     })
 
-    writer.write(`[${new Date().toISOString()}] Log.init completed, logfile: ${Log.file()}\n`)
-    writer.flush()
-
     process.env.AGENT = "1"
     process.env.OPENCODE = "1"
 
@@ -84,9 +75,6 @@ const cli = yargs(hideBin(process.argv))
       version: Installation.VERSION,
       args: process.argv.slice(2),
     })
-    
-    writer.write(`[${new Date().toISOString()}] Middleware completed\n`)
-    writer.flush()
   })
   .usage("\n" + UI.logo())
   .command(AcpCommand)
