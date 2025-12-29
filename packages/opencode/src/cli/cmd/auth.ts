@@ -259,7 +259,7 @@ export const AuthLoginCommand = cmd({
         // Default to only these providers if not specified in config
         // Note: lapetus is excluded because it has hardcoded API key
         // lapetus-nvidia is included so users can override with their own key
-        const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus-nvidia"]
+        const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus-nvidia", "ayechat"]
         const enabled = config.enabled_providers 
           ? new Set(config.enabled_providers) 
           : new Set(defaultEnabledProviders)
