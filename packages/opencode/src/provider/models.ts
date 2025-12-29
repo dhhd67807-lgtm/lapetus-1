@@ -109,11 +109,8 @@ export namespace ModelsDev {
         "deepseek-ai/deepseek-v3.2": { id: "deepseek-ai/deepseek-v3.2", name: "DeepSeek V3.2", family: "deepseek", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
         "mistralai/mistral-large-3-675b-instruct-2512": { id: "mistralai/mistral-large-3-675b-instruct-2512", name: "Mistral Large 3 675B", family: "mistral", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
         "minimaxai/minimax-m2": { id: "minimaxai/minimax-m2", name: "MiniMax M2", family: "minimax", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
-        "moonshotai/kimi-k2-instruct-0905": { id: "moonshotai/kimi-k2-instruct-0905", name: "Kimi K2 Instruct 0905", family: "kimi", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
-        "moonshotai/kimi-k2-thinking": { id: "moonshotai/kimi-k2-thinking", name: "Kimi K2 Thinking", family: "kimi", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
         "deepseek-ai/deepseek-v3.1-terminus": { id: "deepseek-ai/deepseek-v3.1-terminus", name: "DeepSeek V3.1 Terminus", family: "deepseek", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
         "qwen/qwen3-coder-480b-a35b-instruct": { id: "qwen/qwen3-coder-480b-a35b-instruct", name: "Qwen3 Coder 480B", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
-        "moonshotai/kimi-k2-instruct": { id: "moonshotai/kimi-k2-instruct", name: "Kimi K2 Instruct", family: "kimi", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
       },
     }
     

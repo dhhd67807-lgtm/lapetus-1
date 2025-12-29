@@ -355,10 +355,44 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
               if (match.found) draft.session[match.index] = session.data!
               if (!match.found) draft.session.splice(match.index, 0, session.data!)
               draft.todo[sessionID] = todo.data ?? []
-              draft.message[sessionID] = messages.data!.map((x) => x.info)
-              for (const message of messages.data!) {
-                draft.part[message.info.id] = message.parts
+              
+              // Merge messages instead of overwriting to preserve any messages
+              // that were added by the event listener during the sync
+              const existingMessages = draft.message[sessionID] ?? []
+              const fetchedMessages = messages.data!.map((x) => x.info)
+              
+              // Create a map of existing messages by ID for quick lookup
+              const existingMap = new Map(existingMessages.map((m) => [m.id, m]))
+              
+              // Merge: use fetched messages as base, but keep any newer messages from events
+              for (const msg of fetchedMessages) {
+                existingMap.set(msg.id, msg)
               }
+              
+              // Sort by ID to maintain order
+              draft.message[sessionID] = Array.from(existingMap.values()).sort((a, b) => 
+                a.id.localeCompare(b.id)
+              )
+              
+              // Similarly merge parts instead of overwriting
+              for (const message of messages.data!) {
+                const existingParts = draft.part[message.info.id] ?? []
+                const fetchedParts = message.parts
+                
+                // Create a map of existing parts by ID
+                const partsMap = new Map(existingParts.map((p) => [p.id, p]))
+                
+                // Merge: use fetched parts as base, but keep any newer parts from events
+                for (const part of fetchedParts) {
+                  partsMap.set(part.id, part)
+                }
+                
+                // Sort by ID to maintain order
+                draft.part[message.info.id] = Array.from(partsMap.values()).sort((a, b) =>
+                  a.id.localeCompare(b.id)
+                )
+              }
+              
               draft.session_diff[sessionID] = diff.data ?? []
             }),
           )
