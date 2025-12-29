@@ -35,6 +35,9 @@ import { Provider } from "@/provider/provider"
 import { ArgsProvider, useArgs, type Args } from "./context/args"
 import open from "open"
 import { PromptRefProvider, usePromptRef } from "./context/prompt"
+import { Log } from "@/util/log"
+
+const tuiLog = Log.create({ service: "tui.app" })
 
 async function getTerminalBackgroundColor(): Promise<"dark" | "light"> {
   // can't set raw mode if not a TTY
@@ -97,10 +100,14 @@ async function getTerminalBackgroundColor(): Promise<"dark" | "light"> {
 }
 
 export function tui(input: { url: string; args: Args; onExit?: () => Promise<void> }) {
+  tuiLog.info("TUI starting", { url: input.url, args: input.args })
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
+    tuiLog.info("TUI promise started")
     const mode = await getTerminalBackgroundColor()
+    tuiLog.info("Terminal background color detected", { mode })
     const onExit = async () => {
+      tuiLog.info("TUI exiting")
       await input.onExit?.()
       resolve()
     }
