@@ -863,6 +863,9 @@ export namespace Provider {
         ])
       ),
     }
+    
+    // Auto-register Aye Chat provider (has default token)
+    providers["ayechat"] = database["ayechat"] as Info
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
