@@ -107,11 +107,7 @@ export function Session() {
   const { theme } = useTheme()
   const promptRef = usePromptRef()
   const session = createMemo(() => sync.session.get(route.sessionID)!)
-  const messages = createMemo(() => {
-    const msgs = sync.data.message[route.sessionID] ?? []
-    console.log("[SESSION] messages memo updated:", msgs.length, "messages", msgs.map(m => ({ id: m.id, role: m.role })))
-    return msgs
-  })
+  const messages = createMemo(() => sync.data.message[route.sessionID] ?? [])
   const permissions = createMemo(() => sync.data.permission[route.sessionID] ?? [])
 
   const pending = createMemo(() => {
