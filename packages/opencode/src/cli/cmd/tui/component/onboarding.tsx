@@ -22,7 +22,7 @@ export function Onboarding(props: { onComplete: () => void }) {
     },
     {
       title: "Premium Models",
-      content: "Want GPT-5, Claude 4, Gemini 3, O3 and more?\nGet your API key from https://api.5202030.xyz/\n\nSet: export DONEHUB_API_KEY=your-key\nOr run: lapetus auth",
+      content: "GPT-5, Claude 4.5, Gemini 2.5, O3, and more are\nincluded for free! Just select a model and start coding.",
       hint: "Press Enter to continue",
     },
     {

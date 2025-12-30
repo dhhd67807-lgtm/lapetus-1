@@ -96,15 +96,6 @@ export namespace Provider {
         },
       }
     },
-    async "5202030"(input) {
-      const env = Env.all()
-      const auth = await Auth.get(input.id)
-      const apiKey = input.env.map((item) => env[item]).find(Boolean) || (auth?.type === "api" ? auth.key : undefined)
-      return {
-        autoload: true,
-        options: apiKey ? { apiKey } : {},
-      }
-    },
     async opencode(input) {
       const hasKey = await (async () => {
         const env = Env.all()
@@ -588,7 +579,7 @@ export namespace Provider {
 
     const disabled = new Set(config.disabled_providers ?? [])
     // Default to only these providers if not specified in config
-    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia", "5202030"]
+    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia"]
     const enabled = config.enabled_providers 
       ? new Set(config.enabled_providers) 
       : new Set(defaultEnabledProviders)
@@ -827,232 +818,6 @@ export namespace Provider {
     // Auto-register Lapetus NVIDIA provider with default API key
     providers["lapetus-nvidia"] = database["lapetus-nvidia"] as Info
 
-    // Add 5202030 provider - requires user API key
-    database["5202030"] = {
-      id: "5202030",
-      name: "DoneHub",
-      source: "custom",
-      env: ["DONEHUB_API_KEY"],
-      options: {
-        baseURL: "https://api.5202030.xyz/v1",
-      },
-      models: {
-        "gpt-5": {
-          id: "gpt-5",
-          providerID: "5202030",
-          name: "GPT-5",
-          family: "gpt",
-          api: { id: "gpt-5", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "gpt-5-mini": {
-          id: "gpt-5-mini",
-          providerID: "5202030",
-          name: "GPT-5 Mini",
-          family: "gpt",
-          api: { id: "gpt-5-mini", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "gpt-5-nano": {
-          id: "gpt-5-nano",
-          providerID: "5202030",
-          name: "GPT-5 Nano",
-          family: "gpt",
-          api: { id: "gpt-5-nano", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "claude-4-sonnet": {
-          id: "claude-4-sonnet",
-          providerID: "5202030",
-          name: "Claude 4 Sonnet",
-          family: "claude",
-          api: { id: "claude-4-sonnet", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 200000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "claude-4.5-sonnet": {
-          id: "claude-4.5-sonnet",
-          providerID: "5202030",
-          name: "Claude 4.5 Sonnet",
-          family: "claude",
-          api: { id: "claude-4.5-sonnet", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 200000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "claude-4.1-opus": {
-          id: "claude-4.1-opus",
-          providerID: "5202030",
-          name: "Claude 4.1 Opus",
-          family: "claude",
-          api: { id: "claude-4.1-opus", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 200000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "gemini-2.5-pro": {
-          id: "gemini-2.5-pro",
-          providerID: "5202030",
-          name: "Gemini 2.5 Pro",
-          family: "gemini",
-          api: { id: "gemini-2.5-pro", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 1000000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "gemini-2.5-flash": {
-          id: "gemini-2.5-flash",
-          providerID: "5202030",
-          name: "Gemini 2.5 Flash",
-          family: "gemini",
-          api: { id: "gemini-2.5-flash", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 1000000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "deepseek-v3.2": {
-          id: "deepseek-v3.2",
-          providerID: "5202030",
-          name: "DeepSeek V3.2",
-          family: "deepseek",
-          api: { id: "deepseek-v3.2", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "deepseek-r1": {
-          id: "deepseek-r1",
-          providerID: "5202030",
-          name: "DeepSeek R1",
-          family: "deepseek",
-          api: { id: "deepseek-r1", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "qwen3-coder-plus": {
-          id: "qwen3-coder-plus",
-          providerID: "5202030",
-          name: "Qwen3 Coder Plus",
-          family: "qwen",
-          api: { id: "qwen3-coder-plus", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "o3": {
-          id: "o3",
-          providerID: "5202030",
-          name: "O3",
-          family: "gpt",
-          api: { id: "o3", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 200000, output: 100000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "o4-mini": {
-          id: "o4-mini",
-          providerID: "5202030",
-          name: "O4 Mini",
-          family: "gpt",
-          api: { id: "o4-mini", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 200000, output: 100000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "grok-3": {
-          id: "grok-3",
-          providerID: "5202030",
-          name: "Grok 3",
-          family: "grok",
-          api: { id: "grok-3", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "grok-4": {
-          id: "grok-4",
-          providerID: "5202030",
-          name: "Grok 4",
-          family: "grok",
-          api: { id: "grok-4", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 16384 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-      },
-    }
-    
-    // Note: DoneHub (5202030) is in database but NOT auto-registered to providers
-    // It will only be added to providers when user sets API key via auth
-
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
       if (existing) {
@@ -1288,15 +1053,6 @@ export namespace Provider {
       const s = await state()
       const provider = s.providers[model.providerID]
       const options = { ...provider.options }
-
-      // Check if DoneHub provider has API key
-      if (model.providerID === "5202030" && !options["apiKey"] && !provider.key) {
-        throw new Error(
-          "DoneHub API key required. Get your key from https://api.5202030.xyz/ then:\n" +
-          "  • Set environment variable: export DONEHUB_API_KEY=your-key\n" +
-          "  • Or run: lapetus auth"
-        )
-      }
 
       if (model.api.npm.includes("@ai-sdk/openai-compatible") && options["includeUsage"] !== false) {
         options["includeUsage"] = true
