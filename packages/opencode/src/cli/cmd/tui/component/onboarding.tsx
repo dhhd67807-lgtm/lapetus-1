@@ -21,6 +21,11 @@ export function Onboarding(props: { onComplete: () => void }) {
       hint: "Press Enter to continue",
     },
     {
+      title: "Premium Models",
+      content: "Want GPT-5, Claude 4, Gemini 3, O3 and more?\nGet your API key from https://donehub.cn\n\nThen run: lapetus auth",
+      hint: "Press Enter to continue",
+    },
+    {
       title: "Join Our Community",
       content: "Join our Discord for help, updates, and to connect\nwith other developers!\n\nhttps://discord.gg/QkDEczW6hF",
       hint: "Press Enter to continue",
