@@ -34,7 +34,6 @@ import { createCohere } from "@ai-sdk/cohere"
 import { createGateway } from "@ai-sdk/gateway"
 import { createTogetherAI } from "@ai-sdk/togetherai"
 import { createPerplexity } from "@ai-sdk/perplexity"
-import { createAyeChat, AYECHAT_MODELS } from "./ayechat"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -60,7 +59,6 @@ export namespace Provider {
     "@ai-sdk/perplexity": createPerplexity,
     // @ts-ignore (TODO: kill this code so we dont have to maintain it)
     "@ai-sdk/github-copilot": createGitHubCopilotOpenAICompatible,
-    "@ai-sdk/ayechat": createAyeChat,
   }
 
   type CustomModelLoader = (sdk: any, modelID: string, options?: Record<string, any>) => Promise<any>
@@ -95,14 +93,6 @@ export namespace Provider {
         autoload: true,
         options: {
           includeUsage: false,
-        },
-      }
-    },
-    async ayechat() {
-      return {
-        autoload: true,  // Auto-enable since we have a default token
-        async getModel(sdk: any, modelID: string) {
-          return sdk.languageModel(modelID)
         },
       }
     },
@@ -589,7 +579,7 @@ export namespace Provider {
 
     const disabled = new Set(config.disabled_providers ?? [])
     // Default to only these providers if not specified in config
-    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia", "ayechat"]
+    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia"]
     const enabled = config.enabled_providers 
       ? new Set(config.enabled_providers) 
       : new Set(defaultEnabledProviders)
@@ -827,45 +817,6 @@ export namespace Provider {
     
     // Auto-register Lapetus NVIDIA provider with default API key
     providers["lapetus-nvidia"] = database["lapetus-nvidia"] as Info
-
-    // Add Aye Chat provider - free models during beta (Claude Opus 4.5, GPT-5.2, etc.)
-    database["ayechat"] = {
-      id: "ayechat",
-      name: "Aye Chat",
-      source: "custom",
-      env: ["AYE_TOKEN"],
-      options: {},
-      models: Object.fromEntries(
-        Object.entries(AYECHAT_MODELS).map(([id, config]) => [
-          id,
-          {
-            id,
-            providerID: "ayechat",
-            name: config.name,
-            family: id.split("/")[0],
-            api: { id, url: "https://api.ayechat.ai", npm: "@ai-sdk/ayechat" },
-            options: {},
-            limit: { context: config.maxPromptKb * 1024, output: config.maxOutputTokens },
-            cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-            capabilities: { 
-              temperature: true, 
-              reasoning: id.includes("opus") || id.includes("gpt-5"), 
-              attachment: false, 
-              toolcall: false, 
-              input: { text: true, audio: false, image: false, video: false, pdf: false }, 
-              output: { text: true, audio: false, image: false, video: false, pdf: false }, 
-              interleaved: false 
-            },
-            headers: {},
-            release_date: "2025-01-01",
-            status: "active" as const,
-          },
-        ])
-      ),
-    }
-    
-    // Auto-register Aye Chat provider (has default token)
-    providers["ayechat"] = database["ayechat"] as Info
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]

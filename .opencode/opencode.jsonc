@@ -5,7 +5,7 @@
   //   "url": "https://enterprise.dev.opencode.ai",
   // },
   "instructions": ["STYLE_GUIDE.md"],
-  "enabled_providers": ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia", "ayechat"],
+  "enabled_providers": ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia"],
   "provider": {
     "opencode": {
       "name": "Lapetus",
