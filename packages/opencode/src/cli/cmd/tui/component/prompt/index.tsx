@@ -883,51 +883,53 @@ export function Prompt(props: PromptProps) {
       />
       <box ref={(r) => (anchor = r)}>
         <box
-          border={["left"]}
-          borderColor={highlight()}
+          border={["top", "bottom"]}
+          borderColor={theme.backgroundElement}
           customBorderChars={{
             ...EmptyBorder,
-            vertical: "┃",
-            bottomLeft: "╹",
+            horizontal: "─",
           }}
         >
           <box
-            paddingLeft={2}
+            paddingLeft={1}
             paddingRight={1}
             paddingTop={1}
             flexShrink={0}
-            backgroundColor={theme.backgroundElement}
             flexGrow={1}
+            flexDirection="row"
+            gap={1}
           >
-            <textarea
-              placeholder={props.sessionID ? undefined : `Ask anything... "${PLACEHOLDERS[store.placeholder]}"`}
-              textColor={keybind.leader ? theme.textMuted : theme.text}
-              focusedTextColor={keybind.leader ? theme.textMuted : theme.text}
-              minHeight={1}
-              maxHeight={6}
-              onContentChange={() => {
-                const value = input.plainText
-                setStore("prompt", "input", value)
-                autocomplete.onInput(value)
-                syncExtmarksWithPromptParts()
-              }}
-              keyBindings={textareaKeybindings()}
-              onKeyDown={async (e) => {
-                if (props.disabled) {
-                  e.preventDefault()
-                  return
-                }
-                // Handle clipboard paste (Ctrl+V) - check for images first on Windows
-                // This is needed because Windows terminal doesn't properly send image data
-                // through bracketed paste, so we need to intercept the keypress and
-                // directly read from clipboard before the terminal handles it
-                if (keybind.match("input_paste", e)) {
-                  const content = await Clipboard.read()
-                  if (content?.mime.startsWith("image/")) {
+            <text fg={highlight()}>→</text>
+            <box flexGrow={1}>
+              <textarea
+                placeholder={props.sessionID ? "Add a follow-up" : `Ask anything... "${PLACEHOLDERS[store.placeholder]}"`}
+                textColor={keybind.leader ? theme.textMuted : theme.text}
+                focusedTextColor={keybind.leader ? theme.textMuted : theme.text}
+                minHeight={1}
+                maxHeight={6}
+                onContentChange={() => {
+                  const value = input.plainText
+                  setStore("prompt", "input", value)
+                  autocomplete.onInput(value)
+                  syncExtmarksWithPromptParts()
+                }}
+                keyBindings={textareaKeybindings()}
+                onKeyDown={async (e) => {
+                  if (props.disabled) {
                     e.preventDefault()
-                    await pasteImage({
-                      filename: "clipboard",
-                      mime: content.mime,
+                    return
+                  }
+                  // Handle clipboard paste (Ctrl+V) - check for images first on Windows
+                  // This is needed because Windows terminal doesn't properly send image data
+                  // through bracketed paste, so we need to intercept the keypress and
+                  // directly read from clipboard before the terminal handles it
+                  if (keybind.match("input_paste", e)) {
+                    const content = await Clipboard.read()
+                    if (content?.mime.startsWith("image/")) {
+                      e.preventDefault()
+                      await pasteImage({
+                        filename: "clipboard",
+                        mime: content.mime,
                       content: content.data,
                     })
                     return
@@ -1069,7 +1071,8 @@ export function Prompt(props: PromptProps) {
               cursorColor={theme.text}
               syntaxStyle={syntax()}
             />
-            <box flexDirection="row" flexShrink={0} paddingTop={1} paddingBottom={1} gap={1} justifyContent="flex-end">
+            </box>
+            <box flexShrink={0} justifyContent="flex-end">
               <ShiningModelName text={local.model.parsed().model} muted={keybind.leader} />
             </box>
           </box>
@@ -1175,6 +1178,7 @@ export function Prompt(props: PromptProps) {
                   {store.interrupt > 0 ? "again to interrupt" : "interrupt"}
                 </span>
               </text>
+              <ShiningModelName text={local.model.parsed().model} muted={false} />
             </box>
           </Show>
         </box>
