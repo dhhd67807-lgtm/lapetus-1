@@ -1050,8 +1050,8 @@ export namespace Provider {
       },
     }
     
-    // Auto-register DoneHub provider (models show, but API key required to use)
-    providers["5202030"] = database["5202030"] as Info
+    // Note: DoneHub (5202030) is in database but NOT auto-registered to providers
+    // It will only be added to providers when user sets API key via auth
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
