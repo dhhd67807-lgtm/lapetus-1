@@ -1187,25 +1187,6 @@ export function Prompt(props: PromptProps) {
               </text>
             </box>
           </Show>
-          <Show when={status().type !== "retry"}>
-            <box gap={2} flexDirection="row">
-              <Switch>
-                <Match when={store.mode === "normal"}>
-                  <text fg={theme.text}>
-                    {keybind.print("agent_cycle")} <span style={{ fg: theme.textMuted }}>switch agent</span>
-                  </text>
-                  <text fg={theme.text}>
-                    {keybind.print("command_list")} <span style={{ fg: theme.textMuted }}>commands</span>
-                  </text>
-                </Match>
-                <Match when={store.mode === "shell"}>
-                  <text fg={theme.text}>
-                    esc <span style={{ fg: theme.textMuted }}>exit shell mode</span>
-                  </text>
-                </Match>
-              </Switch>
-            </box>
-          </Show>
         </box>
       </box>
     </>
