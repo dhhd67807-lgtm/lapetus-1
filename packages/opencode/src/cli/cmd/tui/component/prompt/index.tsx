@@ -1,5 +1,5 @@
 import { BoxRenderable, TextareaRenderable, MouseEvent, PasteEvent, t, dim, fg, type KeyBinding, TextAttributes } from "@opentui/core"
-import { createEffect, createMemo, type JSX, onMount, createSignal, onCleanup, Show, Switch, Match } from "solid-js"
+import { createEffect, createMemo, type JSX, onMount, createSignal, onCleanup, Show, Switch, Match, For } from "solid-js"
 import "opentui-spinner/solid"
 import { useLocal } from "@tui/context/local"
 import { useTheme } from "@tui/context/theme"
@@ -1069,10 +1069,8 @@ export function Prompt(props: PromptProps) {
               cursorColor={theme.text}
               syntaxStyle={syntax()}
             />
-            <box flexDirection="row" flexShrink={0} paddingTop={1} paddingBottom={1} gap={1}>
-              <text flexShrink={0} fg={keybind.leader ? theme.textMuted : theme.text}>
-                {local.model.parsed().model}
-              </text>
+            <box flexDirection="row" flexShrink={0} paddingTop={1} paddingBottom={1} gap={1} justifyContent="flex-end">
+              <ShiningModelName text={local.model.parsed().model} muted={keybind.leader} />
             </box>
           </box>
         </box>
@@ -1156,5 +1154,41 @@ export function Prompt(props: PromptProps) {
         </box>
       </box>
     </>
+  )
+}
+
+// Shining text effect for model name - animates a highlight across the text
+function ShiningModelName(props: { text: string; muted: boolean }) {
+  const { theme } = useTheme()
+  const [highlightPos, setHighlightPos] = createSignal(0)
+  
+  onMount(() => {
+    const interval = setInterval(() => {
+      setHighlightPos((pos) => (pos + 1) % (props.text.length + 4))
+    }, 100)
+    onCleanup(() => clearInterval(interval))
+  })
+  
+  const chars = createMemo(() => {
+    const text = props.text
+    const pos = highlightPos()
+    return text.split("").map((char, i) => {
+      const distance = Math.abs(i - pos)
+      let color = props.muted ? theme.textMuted : theme.text
+      if (!props.muted && distance === 0) {
+        color = theme.primary
+      } else if (!props.muted && distance === 1) {
+        color = theme.accent
+      }
+      return { char, color }
+    })
+  })
+  
+  return (
+    <box flexDirection="row" flexShrink={0}>
+      <For each={chars()}>
+        {(item) => <text fg={item.color}>{item.char}</text>}
+      </For>
+    </box>
   )
 }
