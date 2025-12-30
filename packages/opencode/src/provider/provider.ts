@@ -96,6 +96,15 @@ export namespace Provider {
         },
       }
     },
+    async "5202030"(input) {
+      const env = Env.all()
+      const auth = await Auth.get(input.id)
+      const apiKey = input.env.map((item) => env[item]).find(Boolean) || (auth?.type === "api" ? auth.key : undefined)
+      return {
+        autoload: true,
+        options: apiKey ? { apiKey } : {},
+      }
+    },
     async opencode(input) {
       const hasKey = await (async () => {
         const env = Env.all()
@@ -1040,6 +1049,9 @@ export namespace Provider {
         },
       },
     }
+    
+    // Auto-register DoneHub provider (models show, but API key required to use)
+    providers["5202030"] = database["5202030"] as Info
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
@@ -1276,6 +1288,15 @@ export namespace Provider {
       const s = await state()
       const provider = s.providers[model.providerID]
       const options = { ...provider.options }
+
+      // Check if DoneHub provider has API key
+      if (model.providerID === "5202030" && !options["apiKey"] && !provider.key) {
+        throw new Error(
+          "DoneHub API key required. Get your key from https://api.5202030.xyz/ then:\n" +
+          "  • Set environment variable: export DONEHUB_API_KEY=your-key\n" +
+          "  • Or run: lapetus auth"
+        )
+      }
 
       if (model.api.npm.includes("@ai-sdk/openai-compatible") && options["includeUsage"] !== false) {
         options["includeUsage"] = true
