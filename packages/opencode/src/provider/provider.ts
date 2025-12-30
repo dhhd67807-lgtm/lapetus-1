@@ -85,6 +85,7 @@ export namespace Provider {
         autoload: true,
         options: {
           includeUsage: false,
+          streamMode: "text-stream",
         },
       }
     },
@@ -93,6 +94,7 @@ export namespace Provider {
         autoload: true,
         options: {
           includeUsage: false,
+          streamMode: "text-stream",
         },
       }
     },
