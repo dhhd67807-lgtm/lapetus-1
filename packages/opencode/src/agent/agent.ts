@@ -117,7 +117,6 @@ export namespace Agent {
     const result: Record<string, Info> = {
       code: {
         name: "code",
-        color: "#e06c75",
         tools: { ...defaultTools },
         options: {},
         permission: agentPermission,
@@ -126,7 +125,6 @@ export namespace Agent {
       },
       think: {
         name: "think",
-        color: "#61afef",
         options: {},
         permission: planPermission,
         tools: {
