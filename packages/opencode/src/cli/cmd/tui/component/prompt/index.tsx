@@ -522,20 +522,14 @@ export function Prompt(props: PromptProps) {
     if (providerID !== "5202030") return true
     
     try {
-      // Check if provider is in the connected list (has API key)
+      // Check if provider is in the connected list (has API key set via auth)
       const isConnected = sync.data.provider_next.connected?.includes("5202030")
       if (isConnected) {
         return true // API key is already set
       }
       
-      // Also check if provider exists in the main provider list
-      const provider = sync.data.provider.find((x) => x.id === "5202030")
-      if (provider) {
-        return true // Provider is loaded, assume it has credentials
-      }
-      
       // Get the server port and open browser to auth page
-      const port = sync.data.path.state ? 43827 : 43827 // Default port
+      const port = 43827 // Default lapetus port
       const authUrl = `http://localhost:${port}/auth/donehub`
       
       // Open browser
@@ -575,9 +569,8 @@ export function Prompt(props: PromptProps) {
       
       // Check if now connected
       const isConnected = sync.data.provider_next.connected?.includes("5202030")
-      const provider = sync.data.provider.find((x) => x.id === "5202030")
       
-      if (isConnected || provider) {
+      if (isConnected) {
         dialog.clear()
         props.onSuccess()
       } else {
