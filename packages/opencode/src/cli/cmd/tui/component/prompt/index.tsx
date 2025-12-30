@@ -605,7 +605,7 @@ export function Prompt(props: PromptProps) {
     })
     
     return (
-      <box paddingLeft={2} paddingRight={2} gap={1} paddingBottom={1}>
+      <box paddingLeft={2} paddingRight={2} gap={1} paddingBottom={1} paddingTop={1} backgroundColor={theme.backgroundElement}>
         <box flexDirection="row" justifyContent="space-between">
           <text attributes={TextAttributes.BOLD} fg={theme.text}>
             DoneHub API Key
