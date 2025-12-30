@@ -315,6 +315,8 @@ export namespace SessionProcessor {
                 case "text-end":
                   if (currentText) {
                     currentText.text = currentText.text.trimEnd()
+                    // Filter out raw tool_calls JSON that some providers return as text
+                    currentText.text = currentText.text.replace(/^\s*\{"tool_calls"\s*:\s*\[.*?\]\s*\}\s*$/gs, "").trim()
                     const textOutput = await Plugin.trigger(
                       "experimental.text.complete",
                       {
