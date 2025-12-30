@@ -28,6 +28,7 @@ import { createColors, createFrames } from "../../ui/spinner.ts"
 import { useDialog } from "@tui/ui/dialog"
 import { DialogProvider as DialogProviderConnect } from "../dialog-provider"
 import { DialogAlert } from "../../ui/dialog-alert"
+import { DialogPrompt } from "../../ui/dialog-prompt"
 import { useToast } from "../../ui/toast"
 
 export type PromptProps = {
@@ -516,6 +517,49 @@ export function Prompt(props: PromptProps) {
     },
   })
 
+  // Check if DoneHub provider needs API key and prompt for it
+  async function checkDoneHubApiKey(providerID: string): Promise<boolean> {
+    if (providerID !== "5202030") return true
+    
+    // Check if provider has API key set
+    const provider = sync.data.provider.find((x) => x.id === "5202030")
+    if (provider?.source === "api" || provider?.source === "env") {
+      return true // API key is already set
+    }
+    
+    // Show dialog to enter API key
+    const apiKey = await DialogPrompt.show(dialog, "DoneHub API Key Required", {
+      placeholder: "Enter your API key",
+      description: () => (
+        <box gap={1}>
+          <text fg={theme.textMuted}>
+            Get your API key from https://api.5202030.xyz/
+          </text>
+          <text fg={theme.text}>
+            Or set environment variable: <span style={{ fg: theme.primary }}>export DONEHUB_API_KEY=your-key</span>
+          </text>
+        </box>
+      ),
+    })
+    
+    if (!apiKey) {
+      return false // User cancelled
+    }
+    
+    // Save the API key
+    sdk.client.auth.set({
+      providerID: "5202030",
+      auth: {
+        type: "api",
+        key: apiKey,
+      },
+    })
+    await sdk.client.instance.dispose()
+    await sync.bootstrap()
+    
+    return true
+  }
+
   async function submit() {
     if (props.disabled) return
     if (autocomplete?.visible) return
@@ -530,6 +574,13 @@ export function Prompt(props: PromptProps) {
       promptModelWarning()
       return
     }
+    
+    // Check if DoneHub provider needs API key
+    const hasApiKey = await checkDoneHubApiKey(selectedModel.providerID)
+    if (!hasApiKey) {
+      return // User cancelled API key dialog
+    }
+    
     const sessionID = props.sessionID
       ? props.sessionID
       : await (async () => {
