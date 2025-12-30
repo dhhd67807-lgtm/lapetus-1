@@ -80,21 +80,21 @@ export namespace ModelsDev {
     const result = await file.json().catch(() => {})
     const providers = result ? result as Record<string, Provider> : JSON.parse(await data()) as Record<string, Provider>
     
-    // Add Lapetus (iFlow) provider - no env needed, API key is hardcoded
+    // Add Lapetus provider - built-in API key, no user key needed
     providers["lapetus"] = {
       id: "lapetus",
       name: "Lapetus",
-      api: "https://apis.iflow.cn/v1",
+      api: "https://lapetuse-api.onrender.com/v1",
       npm: "@ai-sdk/openai-compatible",
       env: [],
       models: {
-        "qwen3-coder-plus": { id: "qwen3-coder-plus", name: "Qwen3 Coder Plus", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
-        "qwen3-max-preview": { id: "qwen3-max-preview", name: "Qwen3 Max Preview", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
-        "glm-4.6": { id: "glm-4.6", name: "GLM 4.6", family: "glm", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
-        "deepseek-v3.2": { id: "deepseek-v3.2", name: "DeepSeek V3.2", family: "deepseek", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
-        "qwen3-235b-a22b-thinking-2507": { id: "qwen3-235b-a22b-thinking-2507", name: "Qwen3 235B Thinking", family: "qwen", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
-        "qwen3-235b-a22b-instruct": { id: "qwen3-235b-a22b-instruct", name: "Qwen3 235B Instruct", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
-        "qwen3-235b": { id: "qwen3-235b", name: "Qwen3 235B", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
+        "gpt-5": { id: "gpt-5", name: "GPT-5", family: "gpt", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
+        "claude-4.5-sonnet": { id: "claude-4.5-sonnet", name: "Claude 4.5 Sonnet", family: "claude", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 16384 } },
+        "gemini-2.5-pro": { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", family: "gemini", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 1000000, output: 16384 } },
+        "deepseek-r1": { id: "deepseek-r1", name: "DeepSeek R1", family: "deepseek", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
+        "o3": { id: "o3", name: "O3", family: "gpt", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 100000 } },
+        "grok-3": { id: "grok-3", name: "Grok 3", family: "grok", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
+        "opus-4.5-reasoning": { id: "opus-4.5-reasoning", name: "Opus 4.5 Reasoning", family: "claude", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 32000 } },
       },
     }
 

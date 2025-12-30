@@ -517,119 +517,6 @@ export function Prompt(props: PromptProps) {
     },
   })
 
-  // Check if DoneHub provider needs API key and prompt for it
-  async function checkDoneHubApiKey(providerID: string): Promise<boolean> {
-    if (providerID !== "5202030") return true
-    
-    try {
-      // Get the server URL from SDK
-      const serverUrl = sdk.url.replace(/\/$/, '') // Remove trailing slash if any
-      
-      // Directly check if auth exists (more reliable than cached provider state)
-      const checkResponse = await fetch(`${serverUrl}/auth/donehub/check`)
-      const checkData = await checkResponse.json() as { hasKey: boolean }
-      
-      if (checkData.hasKey) {
-        return true // API key is already set
-      }
-      
-      // Construct auth URL and open browser
-      const authUrl = `${serverUrl}/auth/donehub`
-      
-      // Open browser
-      const platform = process.platform
-      const openCmd = platform === "darwin" ? "open" : platform === "win32" ? "start" : "xdg-open"
-      Bun.spawn([openCmd, authUrl])
-      
-      // Show dialog telling user to complete in browser
-      return new Promise<boolean>((resolve) => {
-        dialog.replace(
-          () => (
-            <DoneHubWaitingDialog
-              authUrl={authUrl}
-              onSuccess={() => resolve(true)}
-              onCancel={() => resolve(false)}
-            />
-          ),
-          () => resolve(false)
-        )
-      })
-    } catch (e) {
-      console.error("Error checking DoneHub API key:", e)
-      return true // Let it proceed and fail on backend if needed
-    }
-  }
-
-  // DoneHub Waiting Dialog Component
-  function DoneHubWaitingDialog(props: { authUrl: string; onSuccess: () => void; onCancel: () => void }) {
-    const { theme } = useTheme()
-    const [checking, setChecking] = createSignal(false)
-    const [status, setStatus] = createSignal("Waiting for API key...")
-    
-    // Poll for API key being set
-    const checkApiKey = async () => {
-      if (checking()) return // Prevent concurrent checks
-      setChecking(true)
-      setStatus("Checking...")
-      
-      try {
-        // Directly check if auth exists (bypasses cached provider state)
-        const serverUrl = sdk.url.replace(/\/$/, '')
-        const response = await fetch(`${serverUrl}/auth/donehub/check`)
-        const data = await response.json() as { hasKey: boolean }
-        
-        if (data.hasKey) {
-          setStatus("API key found! Restarting...")
-          // Need to dispose and re-bootstrap to pick up the new auth
-          await sdk.client.instance.dispose()
-          await sync.bootstrap()
-          dialog.clear()
-          props.onSuccess()
-        } else {
-          setStatus("Waiting for API key...")
-          setChecking(false)
-        }
-      } catch (e) {
-        setStatus("Waiting for API key...")
-        setChecking(false)
-      }
-    }
-    
-    // Auto-check every 2 seconds
-    const interval = setInterval(checkApiKey, 2000)
-    onCleanup(() => clearInterval(interval))
-    
-    // Also check immediately on mount
-    onMount(() => {
-      setTimeout(checkApiKey, 500)
-    })
-    
-    return (
-      <box paddingLeft={2} paddingRight={2} gap={1} paddingBottom={1} paddingTop={1} backgroundColor={theme.backgroundElement}>
-        <box flexDirection="row" justifyContent="space-between">
-          <text attributes={TextAttributes.BOLD} fg={theme.text}>
-            DoneHub API Key
-          </text>
-          <text fg={theme.textMuted}>esc to cancel</text>
-        </box>
-        <box gap={1}>
-          <text fg={theme.text}>
-            Browser opened to enter your API key
-          </text>
-          <text fg={theme.primary}>
-            {props.authUrl}
-          </text>
-          <text fg={theme.textMuted}>
-            Get your key from: https://api.5202030.xyz/panel/token
-          </text>
-          <text fg={checking() ? theme.accent : theme.textMuted}>
-            {status()}
-          </text>
-        </box>
-      </box>
-    )
-  }
-
   async function submit() {
     if (props.disabled) return
     if (autocomplete?.visible) return
@@ -643,12 +530,6 @@ export function Prompt(props: PromptProps) {
     if (!selectedModel) {
       promptModelWarning()
       return
-    }
-    
-    // Check if DoneHub provider needs API key
-    const hasApiKey = await checkDoneHubApiKey(selectedModel.providerID)
-    if (!hasApiKey) {
-      return // User cancelled API key dialog
     }
     
     const sessionID = props.sessionID
