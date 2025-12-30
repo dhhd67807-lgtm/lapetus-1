@@ -522,14 +522,18 @@ export function Prompt(props: PromptProps) {
     if (providerID !== "5202030") return true
     
     try {
-      // Check if provider is in the connected list (has API key set via auth)
-      const isConnected = sync.data.provider_next.connected?.includes("5202030")
-      if (isConnected) {
+      // Get the server URL from SDK
+      const serverUrl = sdk.url.replace(/\/$/, '') // Remove trailing slash if any
+      
+      // Directly check if auth exists (more reliable than cached provider state)
+      const checkResponse = await fetch(`${serverUrl}/auth/donehub/check`)
+      const checkData = await checkResponse.json() as { hasKey: boolean }
+      
+      if (checkData.hasKey) {
         return true // API key is already set
       }
       
-      // Get the server URL from SDK and construct auth URL
-      const serverUrl = sdk.url.replace(/\/$/, '') // Remove trailing slash if any
+      // Construct auth URL and open browser
       const authUrl = `${serverUrl}/auth/donehub`
       
       // Open browser
