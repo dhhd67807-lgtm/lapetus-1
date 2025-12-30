@@ -1,4 +1,4 @@
-import { BoxRenderable, TextareaRenderable, MouseEvent, PasteEvent, t, dim, fg, type KeyBinding } from "@opentui/core"
+import { BoxRenderable, TextareaRenderable, MouseEvent, PasteEvent, t, dim, fg, type KeyBinding, TextAttributes } from "@opentui/core"
 import { createEffect, createMemo, type JSX, onMount, createSignal, onCleanup, Show, Switch, Match } from "solid-js"
 import "opentui-spinner/solid"
 import { useLocal } from "@tui/context/local"
@@ -534,11 +534,21 @@ export function Prompt(props: PromptProps) {
         return true // Provider is loaded, assume it has credentials
       }
       
-      // Show dialog to enter API key with URL
+      // Get the server port and open browser to auth page
+      const port = sync.data.path.state ? 43827 : 43827 // Default port
+      const authUrl = `http://localhost:${port}/auth/donehub`
+      
+      // Open browser
+      const platform = process.platform
+      const openCmd = platform === "darwin" ? "open" : platform === "win32" ? "start" : "xdg-open"
+      Bun.spawn([openCmd, authUrl])
+      
+      // Show dialog telling user to complete in browser
       return new Promise<boolean>((resolve) => {
         dialog.replace(
           () => (
-            <DoneHubApiKeyDialog
+            <DoneHubWaitingDialog
+              authUrl={authUrl}
               onSuccess={() => resolve(true)}
               onCancel={() => resolve(false)}
             />
@@ -552,52 +562,56 @@ export function Prompt(props: PromptProps) {
     }
   }
 
-  // DoneHub API Key Dialog Component
-  function DoneHubApiKeyDialog(props: { onSuccess: () => void; onCancel: () => void }) {
+  // DoneHub Waiting Dialog Component
+  function DoneHubWaitingDialog(props: { authUrl: string; onSuccess: () => void; onCancel: () => void }) {
     const { theme } = useTheme()
-    const [error, setError] = createSignal(false)
+    const [checking, setChecking] = createSignal(false)
+    
+    // Poll for API key being set
+    const checkApiKey = async () => {
+      setChecking(true)
+      await sdk.client.instance.dispose()
+      await sync.bootstrap()
+      
+      // Check if now connected
+      const isConnected = sync.data.provider_next.connected?.includes("5202030")
+      const provider = sync.data.provider.find((x) => x.id === "5202030")
+      
+      if (isConnected || provider) {
+        dialog.clear()
+        props.onSuccess()
+      } else {
+        setChecking(false)
+      }
+    }
+    
+    // Auto-check every 2 seconds
+    const interval = setInterval(checkApiKey, 2000)
+    onCleanup(() => clearInterval(interval))
     
     return (
-      <DialogPrompt
-        title="DoneHub API Key"
-        placeholder="Paste your API key here"
-        onConfirm={async (value) => {
-          if (!value || !value.trim()) {
-            setError(true)
-            return
-          }
-          
-          // Save the API key
-          await sdk.client.auth.set({
-            providerID: "5202030",
-            auth: {
-              type: "api",
-              key: value.trim(),
-            },
-          })
-          await sdk.client.instance.dispose()
-          await sync.bootstrap()
-          dialog.clear()
-          props.onSuccess()
-        }}
-        onCancel={props.onCancel}
-        description={() => (
-          <box gap={1}>
-            <text fg={theme.text}>
-              Get your API key from:
-            </text>
-            <text fg={theme.primary}>
-              https://api.5202030.xyz/
-            </text>
-            <text fg={theme.textMuted}>
-              Copy your API key and paste it below
-            </text>
-            <Show when={error()}>
-              <text fg={theme.error}>Please enter a valid API key</text>
-            </Show>
-          </box>
-        )}
-      />
+      <box paddingLeft={2} paddingRight={2} gap={1} paddingBottom={1}>
+        <box flexDirection="row" justifyContent="space-between">
+          <text attributes={TextAttributes.BOLD} fg={theme.text}>
+            DoneHub API Key
+          </text>
+          <text fg={theme.textMuted}>esc to cancel</text>
+        </box>
+        <box gap={1}>
+          <text fg={theme.text}>
+            Opening browser to enter your API key...
+          </text>
+          <text fg={theme.primary}>
+            {props.authUrl}
+          </text>
+          <text fg={theme.textMuted}>
+            {checking() ? "Checking..." : "Waiting for API key..."}
+          </text>
+          <text fg={theme.textMuted}>
+            Press <span style={{ fg: theme.text }}>r</span> to refresh after entering key
+          </text>
+        </box>
+      </box>
     )
   }
 

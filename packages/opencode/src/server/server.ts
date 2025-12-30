@@ -119,6 +119,201 @@ export namespace Server {
         },
       )
       .get(
+        "/auth/donehub",
+        async (c) => {
+          // Serve HTML page for DoneHub API key input
+          const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DoneHub API Key - Lapetus</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .container {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 480px;
+      width: 90%;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .subtitle {
+      color: #888;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+    .info {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .info a {
+      color: #818cf8;
+      text-decoration: none;
+    }
+    .info a:hover { text-decoration: underline; }
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      font-size: 16px;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      border-color: #818cf8;
+    }
+    input::placeholder { color: #666; }
+    button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .success {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .success-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    .success h2 {
+      color: #10b981;
+      margin-bottom: 8px;
+    }
+    .success p {
+      color: #888;
+    }
+    .error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="form-container">
+    <h1>🔑 DoneHub API Key</h1>
+    <p class="subtitle">Enter your API key to access premium models</p>
+    <div class="info">
+      <p>Get your API key from <a href="https://api.5202030.xyz/" target="_blank">api.5202030.xyz</a></p>
+    </div>
+    <div class="error" id="error"></div>
+    <form id="api-form">
+      <input type="password" id="api-key" placeholder="sk-..." autocomplete="off" required>
+      <button type="submit" id="submit-btn">Save API Key</button>
+    </form>
+  </div>
+  <div class="container success" id="success-container" style="display:none;">
+    <div class="success-icon">✅</div>
+    <h2>API Key Saved!</h2>
+    <p>You can close this window and return to Lapetus</p>
+  </div>
+  <script>
+    const form = document.getElementById('api-form');
+    const input = document.getElementById('api-key');
+    const btn = document.getElementById('submit-btn');
+    const error = document.getElementById('error');
+    const formContainer = document.getElementById('form-container');
+    const successContainer = document.getElementById('success-container');
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const key = input.value.trim();
+      if (!key) return;
+      
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      error.style.display = 'none';
+      
+      try {
+        const res = await fetch('/auth/donehub', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key })
+        });
+        
+        if (res.ok) {
+          formContainer.style.display = 'none';
+          successContainer.style.display = 'block';
+        } else {
+          throw new Error('Failed to save');
+        }
+      } catch (err) {
+        error.textContent = 'Failed to save API key. Please try again.';
+        error.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Save API Key';
+      }
+    });
+    
+    input.focus();
+  </script>
+</body>
+</html>`
+          return c.html(html)
+        },
+      )
+      .post(
+        "/auth/donehub",
+        validator(
+          "json",
+          z.object({
+            key: z.string(),
+          }),
+        ),
+        async (c) => {
+          const { key } = c.req.valid("json")
+          await Auth.set("5202030", {
+            type: "api",
+            key: key,
+          })
+          return c.json({ success: true })
+        },
+      )
+      .get(
         "/global/event",
         describeRoute({
           summary: "Get global events",
