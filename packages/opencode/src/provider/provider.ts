@@ -579,7 +579,7 @@ export namespace Provider {
 
     const disabled = new Set(config.disabled_providers ?? [])
     // Default to only these providers if not specified in config
-    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia"]
+    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia", "oldapi"]
     const enabled = config.enabled_providers 
       ? new Set(config.enabled_providers) 
       : new Set(defaultEnabledProviders)
@@ -817,6 +817,107 @@ export namespace Provider {
     
     // Auto-register Lapetus NVIDIA provider with default API key
     providers["lapetus-nvidia"] = database["lapetus-nvidia"] as Info
+
+    // Add OldAPI provider with hardcoded API key
+    database["oldapi"] = {
+      id: "oldapi",
+      name: "OldAPI",
+      source: "custom",
+      env: [],
+      options: {
+        baseURL: "https://the.oldapi.workers.dev/v1",
+        apiKey: "sk-admin74203",
+      },
+      models: {
+        "gpt-5": {
+          id: "gpt-5",
+          providerID: "oldapi",
+          name: "GPT-5",
+          family: "gpt",
+          api: { id: "gpt-5", url: "https://the.oldapi.workers.dev/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 8192 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "gpt-5-mini": {
+          id: "gpt-5-mini",
+          providerID: "oldapi",
+          name: "GPT-5 Mini",
+          family: "gpt",
+          api: { id: "gpt-5-mini", url: "https://the.oldapi.workers.dev/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 8192 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "o3": {
+          id: "o3",
+          providerID: "oldapi",
+          name: "O3",
+          family: "gpt",
+          api: { id: "o3", url: "https://the.oldapi.workers.dev/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 8192 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "claude45sonnet": {
+          id: "claude45sonnet",
+          providerID: "oldapi",
+          name: "Claude 4.5 Sonnet",
+          family: "claude",
+          api: { id: "claude45sonnet", url: "https://the.oldapi.workers.dev/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 200000, output: 8192 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "claude40opus": {
+          id: "claude40opus",
+          providerID: "oldapi",
+          name: "Claude 4.0 Opus",
+          family: "claude",
+          api: { id: "claude40opus", url: "https://the.oldapi.workers.dev/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 200000, output: 8192 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "llama-3.3-70b": {
+          id: "llama-3.3-70b",
+          providerID: "oldapi",
+          name: "Llama 3.3 70B",
+          family: "llama",
+          api: { id: "llama-3.3-70b", url: "https://the.oldapi.workers.dev/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 8192 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+      },
+    }
+    
+    // Auto-register OldAPI provider
+    providers["oldapi"] = database["oldapi"] as Info
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
