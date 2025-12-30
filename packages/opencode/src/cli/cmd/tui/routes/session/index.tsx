@@ -1245,6 +1245,13 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
     return props.message.time.completed - user.time.created
   })
 
+  // Look up the model's display name from provider data
+  const modelName = createMemo(() => {
+    const provider = sync.data.provider.find((x) => x.id === props.message.providerID)
+    const info = provider?.models[props.message.modelID]
+    return info?.name ?? props.message.modelID
+  })
+
   return (
     <>
       <For each={props.parts}>
@@ -1282,7 +1289,7 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
             <text marginTop={1}>
               <span style={{ fg: local.agent.color(props.message.mode) }}>▣ </span>{" "}
               <span style={{ fg: theme.text }}>{Locale.titlecase(props.message.mode)}</span>
-              <span style={{ fg: theme.textMuted }}> · {props.message.modelID}</span>
+              <span style={{ fg: theme.textMuted }}> · {modelName()}</span>
               <Show when={duration()}>
                 <span style={{ fg: theme.textMuted }}> · {Locale.duration(duration())}</span>
               </Show>
