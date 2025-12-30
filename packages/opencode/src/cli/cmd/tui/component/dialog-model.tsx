@@ -106,6 +106,36 @@ export function DialogModel(props: { providerID?: string }) {
       ]
     })
 
+    // Map model family to display category name
+    const getFamilyCategory = (family?: string): string => {
+      if (!family) return "Other"
+      const familyMap: Record<string, string> = {
+        "gpt": "OpenAI",
+        "claude": "Anthropic",
+        "grok": "xAI",
+        "gemini": "Google",
+        "deepseek": "DeepSeek",
+        "llama": "Meta",
+        "mistral": "Mistral",
+        "qwen": "Alibaba",
+        "minimax": "MiniMax",
+      }
+      return familyMap[family.toLowerCase()] ?? family.charAt(0).toUpperCase() + family.slice(1)
+    }
+
+    // Category sort order (priority)
+    const categoryOrder: Record<string, number> = {
+      "OpenAI": 1,
+      "Anthropic": 2,
+      "xAI": 3,
+      "Google": 4,
+      "DeepSeek": 5,
+      "Meta": 6,
+      "Mistral": 7,
+      "Alibaba": 8,
+      "MiniMax": 9,
+    }
+
     const providerOptions = pipe(
       sync.data.provider,
       sortBy(
@@ -123,6 +153,7 @@ export function DialogModel(props: { providerID?: string }) {
               providerID: provider.id,
               modelID: model,
             }
+            const familyCategory = getFamilyCategory(info.family)
             return {
               value,
               title: info.name ?? model,
@@ -131,7 +162,8 @@ export function DialogModel(props: { providerID?: string }) {
               )
                 ? "(Favorite)"
                 : undefined,
-              category: connected() ? provider.name : undefined,
+              category: connected() ? familyCategory : undefined,
+              categoryOrder: categoryOrder[familyCategory] ?? 99,
               disabled: provider.id === "opencode" && model.includes("-nano"),
               footer: info.cost?.input === 0 && (provider.id === "opencode" || provider.id === "lapetus" || provider.id === "lapetus-nvidia") ? "Free" : undefined,
               onSelect() {
@@ -159,6 +191,7 @@ export function DialogModel(props: { providerID?: string }) {
             return true
           }),
           sortBy(
+            (x) => x.categoryOrder,
             (x) => x.footer !== "Free",
             (x) => x.title,
           ),
