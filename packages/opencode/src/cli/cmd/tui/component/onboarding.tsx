@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js"
+import { createSignal } from "solid-js"
 import { useTheme } from "@tui/context/theme"
 import { useKV } from "@tui/context/kv"
 import { useKeyboard } from "@opentui/solid"
@@ -21,8 +21,8 @@ export function Onboarding(props: { onComplete: () => void }) {
       hint: "Press Enter to continue",
     },
     {
-      title: "Quick Tips",
-      content: "• Type your question and press Enter to chat\n• Use Ctrl+P to open command palette\n• Use Tab to switch between agents\n• Use Ctrl+X to access settings",
+      title: "Join Our Community",
+      content: "Join our Discord for help, updates, and to connect\nwith other developers!\n\nhttps://discord.gg/QkDEczW6hF",
       hint: "Press Enter to continue",
     },
     {
@@ -32,16 +32,22 @@ export function Onboarding(props: { onComplete: () => void }) {
     },
   ]
 
+  const totalSteps = steps.length
+
   useKeyboard((evt) => {
     if (evt.name === "return" || evt.name === "space") {
-      if (step() < steps.length - 1) {
-        setStep(step() + 1)
+      evt.preventDefault?.()
+      const currentStep = step()
+      if (currentStep < totalSteps - 1) {
+        setStep(currentStep + 1)
       } else {
+        // Last step - complete onboarding
         kv.set("onboarding_complete", true)
         props.onComplete()
       }
     }
     if (evt.name === "escape") {
+      evt.preventDefault?.()
       kv.set("onboarding_complete", true)
       props.onComplete()
     }

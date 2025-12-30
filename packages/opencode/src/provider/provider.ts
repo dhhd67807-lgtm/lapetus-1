@@ -821,7 +821,7 @@ export namespace Provider {
     // Add OldAPI provider with hardcoded API key
     database["oldapi"] = {
       id: "oldapi",
-      name: "OldAPI",
+      name: "Lapetus",
       source: "custom",
       env: [],
       options: {
