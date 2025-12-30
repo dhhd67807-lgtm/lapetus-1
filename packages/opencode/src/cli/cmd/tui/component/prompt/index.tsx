@@ -1069,7 +1069,7 @@ export function Prompt(props: PromptProps) {
               cursorColor={theme.text}
               syntaxStyle={syntax()}
             />
-            <box flexDirection="row" flexShrink={0} paddingTop={1} gap={1}>
+            <box flexDirection="row" flexShrink={0} paddingTop={1} paddingBottom={1} gap={1}>
               <text flexShrink={0} fg={keybind.leader ? theme.textMuted : theme.text}>
                 {local.model.parsed().model}
               </text>
