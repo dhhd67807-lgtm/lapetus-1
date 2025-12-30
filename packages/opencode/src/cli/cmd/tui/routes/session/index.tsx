@@ -119,7 +119,6 @@ export function Session() {
   })
 
   const dimensions = useTerminalDimensions()
-  const [sidebar, setSidebar] = createSignal<"show" | "hide" | "auto">(kv.get("sidebar", "auto"))
   const [conceal, setConceal] = createSignal(true)
   const [showThinking, setShowThinking] = createSignal(kv.get("thinking_visibility", true))
   const [showTimestamps, setShowTimestamps] = createSignal(kv.get("timestamps", "hide") === "show")
@@ -130,13 +129,8 @@ export function Session() {
   const [diffWrapMode, setDiffWrapMode] = createSignal<"word" | "none">("word")
 
   const wide = createMemo(() => dimensions().width > 120)
-  const sidebarVisible = createMemo(() => {
-    if (session()?.parentID) return false
-    if (sidebar() === "show") return true
-    if (sidebar() === "auto" && wide()) return true
-    return false
-  })
-  const contentWidth = createMemo(() => dimensions().width - (sidebarVisible() ? 42 : 0) - 4)
+  const sidebarVisible = createMemo(() => false) // Sidebar removed
+  const contentWidth = createMemo(() => dimensions().width - 4)
 
   const scrollAcceleration = createMemo(() => {
     const tui = sync.data.config.tui
@@ -468,22 +462,6 @@ export function Session() {
           sessionID: route.sessionID,
           messageID: message.id,
         })
-      },
-    },
-    {
-      title: sidebarVisible() ? "Hide sidebar" : "Show sidebar",
-      value: "session.sidebar.toggle",
-      keybind: "sidebar_toggle",
-      category: "Session",
-      onSelect: (dialog) => {
-        setSidebar((prev) => {
-          if (prev === "auto") return sidebarVisible() ? "hide" : "show"
-          if (prev === "show") return "hide"
-          return "show"
-        })
-        if (sidebar() === "show") kv.set("sidebar", "auto")
-        if (sidebar() === "hide") kv.set("sidebar", "hide")
-        dialog.clear()
       },
     },
     {
@@ -1098,9 +1076,6 @@ export function Session() {
           </Show>
           <Toast />
         </box>
-        <Show when={sidebarVisible()}>
-          <Sidebar sessionID={route.sessionID} />
-        </Show>
       </box>
     </context.Provider>
   )
