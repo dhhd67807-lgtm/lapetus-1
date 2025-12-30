@@ -1,5 +1,5 @@
 import { Prompt, type PromptRef } from "@tui/component/prompt"
-import { createMemo, Match, onMount, Show, Switch } from "solid-js"
+import { createMemo, createSignal, Match, onMount, Show, Switch } from "solid-js"
 import { useTheme } from "@tui/context/theme"
 import { Logo } from "../component/logo"
 import { Locale } from "@/util/locale"
@@ -10,6 +10,8 @@ import { useDirectory } from "../context/directory"
 import { useRouteData } from "@tui/context/route"
 import { usePromptRef } from "../context/prompt"
 import { Installation } from "@/installation"
+import { useKV } from "../context/kv"
+import { Onboarding } from "../component/onboarding"
 
 // TODO: what is the best way to do this?
 let once = false
@@ -19,6 +21,7 @@ export function Home() {
   const { theme } = useTheme()
   const route = useRouteData("home")
   const promptRef = usePromptRef()
+  const kv = useKV()
   const mcp = createMemo(() => Object.keys(sync.data.mcp).length > 0)
   const mcpError = createMemo(() => {
     return Object.values(sync.data.mcp).some((x) => x.status === "failed")
@@ -29,6 +32,9 @@ export function Home() {
   })
 
   const isFirstTimeUser = createMemo(() => sync.data.session.length === 0)
+  const [showOnboarding, setShowOnboarding] = createSignal(
+    isFirstTimeUser() && !kv.get("onboarding_complete", false)
+  )
 
   const Hint = (
     <Show when={connectedMcpCount() > 0}>
@@ -63,6 +69,11 @@ export function Home() {
     }
   })
   const directory = useDirectory()
+
+  // Show onboarding for first-time users
+  if (showOnboarding()) {
+    return <Onboarding onComplete={() => setShowOnboarding(false)} />
+  }
 
   return (
     <>
