@@ -569,13 +569,15 @@ export function Prompt(props: PromptProps) {
       setStatus("Checking...")
       
       try {
-        // Directly fetch provider list to check if API key is now set
-        const response = await sdk.client.provider.list({})
-        const isConnected = response.data?.connected?.includes("5202030")
+        // Directly check if auth exists (bypasses cached provider state)
+        const serverUrl = sdk.url.replace(/\/$/, '')
+        const response = await fetch(`${serverUrl}/auth/donehub/check`)
+        const data = await response.json() as { hasKey: boolean }
         
-        if (isConnected) {
-          setStatus("API key found! Continuing...")
-          // Refresh the full sync state
+        if (data.hasKey) {
+          setStatus("API key found! Restarting...")
+          // Need to dispose and re-bootstrap to pick up the new auth
+          await sdk.client.instance.dispose()
           await sync.bootstrap()
           dialog.clear()
           props.onSuccess()

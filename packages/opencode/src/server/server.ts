@@ -314,6 +314,14 @@ export namespace Server {
         },
       )
       .get(
+        "/auth/donehub/check",
+        async (c) => {
+          // Directly check if DoneHub auth exists (bypasses cached provider state)
+          const auth = await Auth.get("5202030")
+          return c.json({ hasKey: !!auth })
+        },
+      )
+      .get(
         "/global/event",
         describeRoute({
           summary: "Get global events",
