@@ -336,13 +336,75 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
     const syntax = createMemo(() => generateSyntax(values()))
     const subtleSyntax = createMemo(() => generateSubtleSyntax(values()))
 
+    // Create individual memos for each theme property to ensure proper reactivity
+    const themeMemos = {
+      primary: createMemo(() => values().primary),
+      secondary: createMemo(() => values().secondary),
+      accent: createMemo(() => values().accent),
+      error: createMemo(() => values().error),
+      warning: createMemo(() => values().warning),
+      success: createMemo(() => values().success),
+      info: createMemo(() => values().info),
+      text: createMemo(() => values().text),
+      textMuted: createMemo(() => values().textMuted),
+      selectedListItemText: createMemo(() => values().selectedListItemText),
+      background: createMemo(() => values().background),
+      backgroundPanel: createMemo(() => values().backgroundPanel),
+      backgroundElement: createMemo(() => values().backgroundElement),
+      backgroundMenu: createMemo(() => values().backgroundMenu),
+      border: createMemo(() => values().border),
+      borderActive: createMemo(() => values().borderActive),
+      borderSubtle: createMemo(() => values().borderSubtle),
+      diffAdded: createMemo(() => values().diffAdded),
+      diffRemoved: createMemo(() => values().diffRemoved),
+      diffContext: createMemo(() => values().diffContext),
+      diffHunkHeader: createMemo(() => values().diffHunkHeader),
+      diffHighlightAdded: createMemo(() => values().diffHighlightAdded),
+      diffHighlightRemoved: createMemo(() => values().diffHighlightRemoved),
+      diffAddedBg: createMemo(() => values().diffAddedBg),
+      diffRemovedBg: createMemo(() => values().diffRemovedBg),
+      diffContextBg: createMemo(() => values().diffContextBg),
+      diffLineNumber: createMemo(() => values().diffLineNumber),
+      diffAddedLineNumberBg: createMemo(() => values().diffAddedLineNumberBg),
+      diffRemovedLineNumberBg: createMemo(() => values().diffRemovedLineNumberBg),
+      markdownText: createMemo(() => values().markdownText),
+      markdownHeading: createMemo(() => values().markdownHeading),
+      markdownLink: createMemo(() => values().markdownLink),
+      markdownLinkText: createMemo(() => values().markdownLinkText),
+      markdownCode: createMemo(() => values().markdownCode),
+      markdownBlockQuote: createMemo(() => values().markdownBlockQuote),
+      markdownEmph: createMemo(() => values().markdownEmph),
+      markdownStrong: createMemo(() => values().markdownStrong),
+      markdownHorizontalRule: createMemo(() => values().markdownHorizontalRule),
+      markdownListItem: createMemo(() => values().markdownListItem),
+      markdownListEnumeration: createMemo(() => values().markdownListEnumeration),
+      markdownImage: createMemo(() => values().markdownImage),
+      markdownImageText: createMemo(() => values().markdownImageText),
+      markdownCodeBlock: createMemo(() => values().markdownCodeBlock),
+      syntaxComment: createMemo(() => values().syntaxComment),
+      syntaxKeyword: createMemo(() => values().syntaxKeyword),
+      syntaxFunction: createMemo(() => values().syntaxFunction),
+      syntaxVariable: createMemo(() => values().syntaxVariable),
+      syntaxString: createMemo(() => values().syntaxString),
+      syntaxNumber: createMemo(() => values().syntaxNumber),
+      syntaxType: createMemo(() => values().syntaxType),
+      syntaxOperator: createMemo(() => values().syntaxOperator),
+      syntaxPunctuation: createMemo(() => values().syntaxPunctuation),
+      _hasSelectedListItemText: createMemo(() => values()._hasSelectedListItemText),
+      thinkingOpacity: createMemo(() => values().thinkingOpacity),
+    }
+
+    // Create a Proxy that calls the appropriate memo for each property
+    const theme = new Proxy({} as Theme, {
+      get(_target, prop: keyof typeof themeMemos) {
+        const memo = themeMemos[prop]
+        if (memo) return memo()
+        return values()[prop as keyof Theme]
+      },
+    })
+
     return {
-      theme: new Proxy(values(), {
-        get(_target, prop) {
-          // @ts-expect-error
-          return values()[prop]
-        },
-      }),
+      theme,
       get selected() {
         return store.active
       },
