@@ -528,9 +528,9 @@ export function Prompt(props: PromptProps) {
         return true // API key is already set
       }
       
-      // Get the server port and open browser to auth page
-      const port = 43827 // Default lapetus port
-      const authUrl = `http://localhost:${port}/auth/donehub`
+      // Get the server URL from SDK and construct auth URL
+      const serverUrl = sdk.url.replace(/\/$/, '') // Remove trailing slash if any
+      const authUrl = `${serverUrl}/auth/donehub`
       
       // Open browser
       const platform = process.platform
@@ -560,20 +560,31 @@ export function Prompt(props: PromptProps) {
   function DoneHubWaitingDialog(props: { authUrl: string; onSuccess: () => void; onCancel: () => void }) {
     const { theme } = useTheme()
     const [checking, setChecking] = createSignal(false)
+    const [status, setStatus] = createSignal("Waiting for API key...")
     
     // Poll for API key being set
     const checkApiKey = async () => {
+      if (checking()) return // Prevent concurrent checks
       setChecking(true)
-      await sdk.client.instance.dispose()
-      await sync.bootstrap()
+      setStatus("Checking...")
       
-      // Check if now connected
-      const isConnected = sync.data.provider_next.connected?.includes("5202030")
-      
-      if (isConnected) {
-        dialog.clear()
-        props.onSuccess()
-      } else {
+      try {
+        // Directly fetch provider list to check if API key is now set
+        const response = await sdk.client.provider.list({})
+        const isConnected = response.data?.connected?.includes("5202030")
+        
+        if (isConnected) {
+          setStatus("API key found! Continuing...")
+          // Refresh the full sync state
+          await sync.bootstrap()
+          dialog.clear()
+          props.onSuccess()
+        } else {
+          setStatus("Waiting for API key...")
+          setChecking(false)
+        }
+      } catch (e) {
+        setStatus("Waiting for API key...")
         setChecking(false)
       }
     }
@@ -581,6 +592,11 @@ export function Prompt(props: PromptProps) {
     // Auto-check every 2 seconds
     const interval = setInterval(checkApiKey, 2000)
     onCleanup(() => clearInterval(interval))
+    
+    // Also check immediately on mount
+    onMount(() => {
+      setTimeout(checkApiKey, 500)
+    })
     
     return (
       <box paddingLeft={2} paddingRight={2} gap={1} paddingBottom={1}>
@@ -592,16 +608,16 @@ export function Prompt(props: PromptProps) {
         </box>
         <box gap={1}>
           <text fg={theme.text}>
-            Opening browser to enter your API key...
+            Browser opened to enter your API key
           </text>
           <text fg={theme.primary}>
             {props.authUrl}
           </text>
           <text fg={theme.textMuted}>
-            {checking() ? "Checking..." : "Waiting for API key..."}
+            Get your key from: https://api.5202030.xyz/panel/token
           </text>
-          <text fg={theme.textMuted}>
-            Press <span style={{ fg: theme.text }}>r</span> to refresh after entering key
+          <text fg={checking() ? theme.accent : theme.textMuted}>
+            {status()}
           </text>
         </box>
       </box>

@@ -238,7 +238,7 @@ export namespace Server {
     <h1>🔑 DoneHub API Key</h1>
     <p class="subtitle">Enter your API key to access premium models</p>
     <div class="info">
-      <p>Get your API key from <a href="https://api.5202030.xyz/" target="_blank">api.5202030.xyz</a></p>
+      <p>Get your API key from <a href="https://api.5202030.xyz/panel/token" target="_blank">api.5202030.xyz/panel/token</a></p>
     </div>
     <div class="error" id="error"></div>
     <form id="api-form">
@@ -249,7 +249,7 @@ export namespace Server {
   <div class="container success" id="success-container" style="display:none;">
     <div class="success-icon">✅</div>
     <h2>API Key Saved!</h2>
-    <p>You can close this window and return to Lapetus</p>
+    <p>You can close this window and return to Lapetus.<br>The terminal will automatically continue.</p>
   </div>
   <script>
     const form = document.getElementById('api-form');
@@ -1770,6 +1770,28 @@ export namespace Server {
         async (c) => {
           using _ = log.time("providers")
           const providers = await Provider.list().then((x) => mapValues(x, (item) => item))
+          
+          // Add DoneHub provider to the list (even without credentials) so models show
+          if (!providers["5202030"]) {
+            providers["5202030"] = {
+              id: "5202030",
+              name: "DoneHub",
+              source: "custom",
+              env: ["DONEHUB_API_KEY"],
+              options: { baseURL: "https://api.5202030.xyz/v1" },
+              models: {
+                "gpt-5": { id: "gpt-5", providerID: "5202030", name: "GPT-5", family: "gpt", api: { id: "gpt-5", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 128000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "gpt-5-mini": { id: "gpt-5-mini", providerID: "5202030", name: "GPT-5 Mini", family: "gpt", api: { id: "gpt-5-mini", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 128000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "claude-4-sonnet": { id: "claude-4-sonnet", providerID: "5202030", name: "Claude 4 Sonnet", family: "claude", api: { id: "claude-4-sonnet", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 200000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "claude-4.5-sonnet": { id: "claude-4.5-sonnet", providerID: "5202030", name: "Claude 4.5 Sonnet", family: "claude", api: { id: "claude-4.5-sonnet", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 200000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "gemini-2.5-pro": { id: "gemini-2.5-pro", providerID: "5202030", name: "Gemini 2.5 Pro", family: "gemini", api: { id: "gemini-2.5-pro", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 1000000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "deepseek-r1": { id: "deepseek-r1", providerID: "5202030", name: "DeepSeek R1", family: "deepseek", api: { id: "deepseek-r1", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 128000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "o3": { id: "o3", providerID: "5202030", name: "O3", family: "gpt", api: { id: "o3", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 200000, output: 100000 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "grok-3": { id: "grok-3", providerID: "5202030", name: "Grok 3", family: "grok", api: { id: "grok-3", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 128000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+              },
+            }
+          }
+          
           return c.json({
             providers: Object.values(providers),
             default: mapValues(providers, (item) => Provider.sort(Object.values(item.models))[0].id),
@@ -1817,6 +1839,30 @@ export namespace Server {
             mapValues(filteredProviders, (x) => Provider.fromModelsDevProvider(x)),
             connected,
           )
+          
+          // Add DoneHub provider to the list if enabled (even without credentials)
+          const donehubEnabled = enabled ? enabled.has("5202030") : true
+          if (donehubEnabled && !disabled.has("5202030") && !providers["5202030"]) {
+            const donehubProvider: Provider.Info = {
+              id: "5202030",
+              name: "DoneHub",
+              source: "custom",
+              env: ["DONEHUB_API_KEY"],
+              options: { baseURL: "https://api.5202030.xyz/v1" },
+              models: {
+                "gpt-5": { id: "gpt-5", providerID: "5202030", name: "GPT-5", family: "gpt", api: { id: "gpt-5", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 128000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "gpt-5-mini": { id: "gpt-5-mini", providerID: "5202030", name: "GPT-5 Mini", family: "gpt", api: { id: "gpt-5-mini", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 128000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "claude-4-sonnet": { id: "claude-4-sonnet", providerID: "5202030", name: "Claude 4 Sonnet", family: "claude", api: { id: "claude-4-sonnet", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 200000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "claude-4.5-sonnet": { id: "claude-4.5-sonnet", providerID: "5202030", name: "Claude 4.5 Sonnet", family: "claude", api: { id: "claude-4.5-sonnet", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 200000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "gemini-2.5-pro": { id: "gemini-2.5-pro", providerID: "5202030", name: "Gemini 2.5 Pro", family: "gemini", api: { id: "gemini-2.5-pro", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 1000000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "deepseek-r1": { id: "deepseek-r1", providerID: "5202030", name: "DeepSeek R1", family: "deepseek", api: { id: "deepseek-r1", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 128000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "o3": { id: "o3", providerID: "5202030", name: "O3", family: "gpt", api: { id: "o3", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 200000, output: 100000 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+                "grok-3": { id: "grok-3", providerID: "5202030", name: "Grok 3", family: "grok", api: { id: "grok-3", url: "https://api.5202030.xyz/v1", npm: "@ai-sdk/openai-compatible" }, options: {}, limit: { context: 128000, output: 16384 }, cost: { input: 0, output: 0, cache: { read: 0, write: 0 } }, capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false }, headers: {}, release_date: "2025-01-01", status: "active" },
+              },
+            }
+            providers["5202030"] = donehubProvider
+          }
+          
           return c.json({
             all: Object.values(providers),
             default: mapValues(providers, (item) => Provider.sort(Object.values(item.models))[0].id),
