@@ -88,13 +88,19 @@ export namespace ModelsDev {
       npm: "@ai-sdk/openai-compatible",
       env: [],
       models: {
+        // GPT Models
         "gpt-5": { id: "gpt-5", name: "GPT-5", family: "gpt", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
-        "claude-4.5-sonnet": { id: "claude-4.5-sonnet", name: "Claude 4.5 Sonnet", family: "claude", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 16384 } },
-        "gemini-2.5-pro": { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", family: "gemini", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 1000000, output: 16384 } },
-        "deepseek-r1": { id: "deepseek-r1", name: "DeepSeek R1", family: "deepseek", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
+        "gpt-5-thinking": { id: "gpt-5-thinking", name: "GPT-5 Thinking", family: "gpt", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
         "o3": { id: "o3", name: "O3", family: "gpt", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 100000 } },
-        "grok-3": { id: "grok-3", name: "Grok 3", family: "grok", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
-        "opus-4.5-reasoning": { id: "opus-4.5-reasoning", name: "Opus 4.5 Reasoning", family: "claude", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 32000 } },
+        "o4-mini": { id: "o4-mini", name: "O4 Mini", family: "gpt", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 100000 } },
+        // Claude Models
+        "sonnet-4.5": { id: "sonnet-4.5", name: "Claude Sonnet 4.5", family: "claude", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 16384 } },
+        "sonnet-4.5-reasoning": { id: "sonnet-4.5-reasoning", name: "Claude Sonnet 4.5 Reasoning", family: "claude", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 16384 } },
+        "opus-4.5": { id: "opus-4.5", name: "Claude Opus 4.5", family: "claude", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 32000 } },
+        "opus-4.5-reasoning": { id: "opus-4.5-reasoning", name: "Claude Opus 4.5 Reasoning", family: "claude", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 32000 } },
+        // Grok Models
+        "grok-latest": { id: "grok-latest", name: "Grok Latest", family: "grok", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
+        "grok4": { id: "grok4", name: "Grok 4", family: "grok", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
       },
     }
 
