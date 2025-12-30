@@ -521,43 +521,84 @@ export function Prompt(props: PromptProps) {
   async function checkDoneHubApiKey(providerID: string): Promise<boolean> {
     if (providerID !== "5202030") return true
     
-    // Check if provider has API key set
-    const provider = sync.data.provider.find((x) => x.id === "5202030")
-    if (provider?.source === "api" || provider?.source === "env") {
-      return true // API key is already set
+    try {
+      // Check if provider is in the connected list (has API key)
+      const isConnected = sync.data.provider_next.connected?.includes("5202030")
+      if (isConnected) {
+        return true // API key is already set
+      }
+      
+      // Also check if provider exists in the main provider list
+      const provider = sync.data.provider.find((x) => x.id === "5202030")
+      if (provider) {
+        return true // Provider is loaded, assume it has credentials
+      }
+      
+      // Show dialog to enter API key with URL
+      return new Promise<boolean>((resolve) => {
+        dialog.replace(
+          () => (
+            <DoneHubApiKeyDialog
+              onSuccess={() => resolve(true)}
+              onCancel={() => resolve(false)}
+            />
+          ),
+          () => resolve(false)
+        )
+      })
+    } catch (e) {
+      console.error("Error checking DoneHub API key:", e)
+      return true // Let it proceed and fail on backend if needed
     }
+  }
+
+  // DoneHub API Key Dialog Component
+  function DoneHubApiKeyDialog(props: { onSuccess: () => void; onCancel: () => void }) {
+    const { theme } = useTheme()
+    const [error, setError] = createSignal(false)
     
-    // Show dialog to enter API key
-    const apiKey = await DialogPrompt.show(dialog, "DoneHub API Key Required", {
-      placeholder: "Enter your API key",
-      description: () => (
-        <box gap={1}>
-          <text fg={theme.textMuted}>
-            Get your API key from https://api.5202030.xyz/
-          </text>
-          <text fg={theme.text}>
-            Or set environment variable: <span style={{ fg: theme.primary }}>export DONEHUB_API_KEY=your-key</span>
-          </text>
-        </box>
-      ),
-    })
-    
-    if (!apiKey) {
-      return false // User cancelled
-    }
-    
-    // Save the API key
-    sdk.client.auth.set({
-      providerID: "5202030",
-      auth: {
-        type: "api",
-        key: apiKey,
-      },
-    })
-    await sdk.client.instance.dispose()
-    await sync.bootstrap()
-    
-    return true
+    return (
+      <DialogPrompt
+        title="DoneHub API Key"
+        placeholder="Paste your API key here"
+        onConfirm={async (value) => {
+          if (!value || !value.trim()) {
+            setError(true)
+            return
+          }
+          
+          // Save the API key
+          await sdk.client.auth.set({
+            providerID: "5202030",
+            auth: {
+              type: "api",
+              key: value.trim(),
+            },
+          })
+          await sdk.client.instance.dispose()
+          await sync.bootstrap()
+          dialog.clear()
+          props.onSuccess()
+        }}
+        onCancel={props.onCancel}
+        description={() => (
+          <box gap={1}>
+            <text fg={theme.text}>
+              Get your API key from:
+            </text>
+            <text fg={theme.primary}>
+              https://api.5202030.xyz/
+            </text>
+            <text fg={theme.textMuted}>
+              Copy your API key and paste it below
+            </text>
+            <Show when={error()}>
+              <text fg={theme.error}>Please enter a valid API key</text>
+            </Show>
+          </box>
+        )}
+      />
+    )
   }
 
   async function submit() {
