@@ -578,6 +578,12 @@ export namespace SessionPrompt {
   }) {
     using _ = log.time("resolveTools")
     const tools: Record<string, AITool> = {}
+    
+    // If the model doesn't support tool calls, return empty tools
+    if (!input.model.capabilities.toolcall) {
+      return tools
+    }
+    
     const enabledTools = pipe(
       input.agent.tools,
       mergeDeep(await ToolRegistry.enabled(input.agent)),

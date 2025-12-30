@@ -187,7 +187,12 @@ export namespace LLM {
     })
   }
 
-  async function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "user">) {
+  async function resolveTools(input: Pick<StreamInput, "tools" | "agent" | "user" | "model">) {
+    // If the model doesn't support tool calls, return empty tools
+    if (!input.model.capabilities.toolcall) {
+      return {}
+    }
+    
     const enabled = pipe(
       input.agent.tools,
       mergeDeep(await ToolRegistry.enabled(input.agent)),
