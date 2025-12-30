@@ -818,7 +818,7 @@ export namespace Provider {
     // Auto-register Lapetus NVIDIA provider with default API key
     providers["lapetus-nvidia"] = database["lapetus-nvidia"] as Info
 
-    // Add 5202030 provider - requires user API key
+    // Add 5202030 provider - with default API key
     database["5202030"] = {
       id: "5202030",
       name: "5202030",
@@ -826,6 +826,7 @@ export namespace Provider {
       env: ["API_5202030_KEY"],
       options: {
         baseURL: "https://api.5202030.xyz/v1",
+        apiKey: "sk-bKEZidnhFm8ZG04_bqDdsvXCFZr_Essos7TRlPn_PMZq66Fuw1s5gIoEi9Q",
       },
       models: {
         "gpt-5": {
@@ -1040,6 +1041,9 @@ export namespace Provider {
         },
       },
     }
+    
+    // Auto-register 5202030 provider
+    providers["5202030"] = database["5202030"] as Info
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
