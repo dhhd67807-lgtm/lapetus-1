@@ -81,8 +81,45 @@ export namespace Provider {
       }
     },
     async lapetus() {
-      // Custom fetch that converts <tool_code> XML to proper tool_calls format
+      // Custom fetch that handles tool calls and thinking for Lapetus API
       const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+        // Parse the request body to check for tools
+        let requestBody: any = null
+        if (init?.body) {
+          try {
+            requestBody = JSON.parse(init.body as string)
+          } catch {}
+        }
+        
+        // If tools are provided, add instruction to use XML format for tool calls
+        if (requestBody?.tools && requestBody.tools.length > 0) {
+          const toolInstruction = `\n\nIMPORTANT: When you need to use a tool, you MUST output it in this exact XML format:
+<tool_call>
+{"name": "tool_name", "parameters": {"param1": "value1"}}
+</tool_call>
+
+Available tools: ${requestBody.tools.map((t: any) => t.function?.name || t.name).join(", ")}
+
+Always use the tool_call XML format when invoking tools. Do not describe what you would do - actually call the tool.`
+          
+          // Add tool instruction to the last user message or system
+          if (requestBody.messages && requestBody.messages.length > 0) {
+            const lastUserIdx = requestBody.messages.findLastIndex((m: any) => m.role === "user")
+            if (lastUserIdx >= 0) {
+              const lastMsg = requestBody.messages[lastUserIdx]
+              if (typeof lastMsg.content === "string") {
+                lastMsg.content = lastMsg.content + toolInstruction
+              }
+            }
+          }
+          
+          // Update the request body
+          init = {
+            ...init,
+            body: JSON.stringify(requestBody)
+          }
+        }
+        
         const response = await globalThis.fetch(url, init)
         
         // Check if streaming
@@ -97,43 +134,71 @@ export namespace Provider {
           let buffer = ""
           let accumulatedContent = ""
           let toolCallSent = false
+          let thinkingStarted = false
+          let thinkingContent = ""
           
           const stream = new ReadableStream({
             async pull(controller) {
               const { done, value } = await reader.read()
               if (done) {
+                // If we accumulated content but no tool call was sent, send remaining content
+                if (accumulatedContent && !toolCallSent) {
+                  // Check for any remaining tool_call
+                  const toolMatch = accumulatedContent.match(/<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/)
+                  if (toolMatch) {
+                    try {
+                      const toolJson = JSON.parse(toolMatch[1])
+                      const finalEvent = {
+                        id: `chatcmpl-${Date.now()}`,
+                        object: "chat.completion.chunk",
+                        created: Math.floor(Date.now() / 1000),
+                        model: "lapetus",
+                        choices: [{
+                          index: 0,
+                          delta: {
+                            tool_calls: [{
+                              index: 0,
+                              id: `call_${Date.now()}`,
+                              type: "function",
+                              function: {
+                                name: toolJson.name,
+                                arguments: JSON.stringify(toolJson.parameters || {})
+                              }
+                            }]
+                          },
+                          finish_reason: "tool_calls"
+                        }]
+                      }
+                      controller.enqueue(encoder.encode("data: " + JSON.stringify(finalEvent) + "\n\n"))
+                    } catch {}
+                  }
+                }
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"))
                 controller.close()
                 return
               }
               
               buffer += decoder.decode(value, { stream: true })
               
-              // Split by "data: " to handle space-separated events
-              const parts = buffer.split(/(?=data: )/)
-              buffer = ""
+              // Process complete SSE events
+              const lines = buffer.split("\n")
+              buffer = lines.pop() || "" // Keep incomplete line in buffer
               
-              for (let i = 0; i < parts.length; i++) {
-                let part = parts[i].trim()
-                if (!part) continue
-                
-                // Check if this is a complete event (ends with } or [DONE])
-                const isComplete = part.endsWith("}") || part.includes("[DONE]")
-                if (!isComplete && i === parts.length - 1) {
-                  // Last part might be incomplete, save for next iteration
-                  buffer = part
+              for (const line of lines) {
+                const trimmed = line.trim()
+                if (!trimmed || trimmed === "data: [DONE]") {
+                  if (trimmed === "data: [DONE]") {
+                    continue // Will be sent on done
+                  }
                   continue
                 }
                 
-                if (!part.startsWith("data: ")) {
-                  controller.enqueue(encoder.encode(part + "\n\n"))
+                if (!trimmed.startsWith("data: ")) {
                   continue
                 }
                 
-                const data = part.slice(6).trim()
-                if (data === "[DONE]") {
-                  controller.enqueue(encoder.encode("data: [DONE]\n\n"))
-                  continue
-                }
+                const data = trimmed.slice(6).trim()
+                if (!data || data === "[DONE]") continue
                 
                 try {
                   const json = JSON.parse(data)
@@ -142,46 +207,119 @@ export namespace Provider {
                   if (delta?.content) {
                     accumulatedContent += delta.content
                     
-                    // Check if we have a complete <tool_code> block
-                    const toolCodeMatch = accumulatedContent.match(/<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/)
-                    if (toolCodeMatch && !toolCallSent) {
+                    // Check for thinking tags
+                    if (accumulatedContent.includes("<thinking>") && !thinkingStarted) {
+                      thinkingStarted = true
+                    }
+                    
+                    if (thinkingStarted && !accumulatedContent.includes("</thinking>")) {
+                      // Still in thinking mode, accumulate but don't send yet
+                      const thinkMatch = accumulatedContent.match(/<thinking>([\s\S]*?)$/)
+                      if (thinkMatch) {
+                        thinkingContent = thinkMatch[1]
+                      }
+                      continue
+                    }
+                    
+                    if (thinkingStarted && accumulatedContent.includes("</thinking>")) {
+                      // Thinking complete, extract and send as reasoning
+                      const fullThinkMatch = accumulatedContent.match(/<thinking>([\s\S]*?)<\/thinking>/)
+                      if (fullThinkMatch) {
+                        thinkingContent = fullThinkMatch[1].trim()
+                        // Remove thinking from accumulated content
+                        accumulatedContent = accumulatedContent.replace(/<thinking>[\s\S]*?<\/thinking>/g, "").trim()
+                      }
+                      thinkingStarted = false
+                    }
+                    
+                    // Check for tool_call XML
+                    const toolMatch = accumulatedContent.match(/<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/)
+                    if (toolMatch && !toolCallSent) {
                       try {
-                        const toolJson = JSON.parse(toolCodeMatch[1])
+                        const toolJson = JSON.parse(toolMatch[1])
                         toolCallSent = true
-                        // Send tool call delta
-                        json.choices[0].delta = {
-                          tool_calls: [{
+                        
+                        // Send content before tool call if any
+                        const contentBefore = accumulatedContent.split("<tool_call>")[0].trim()
+                        if (contentBefore) {
+                          json.choices[0].delta = { content: contentBefore }
+                          json.choices[0].finish_reason = null
+                          controller.enqueue(encoder.encode("data: " + JSON.stringify(json) + "\n\n"))
+                        }
+                        
+                        // Send tool call
+                        const toolEvent = {
+                          ...json,
+                          choices: [{
                             index: 0,
-                            id: `call_${Date.now()}`,
-                            type: "function",
-                            function: {
-                              name: toolJson.name,
-                              arguments: JSON.stringify(toolJson.parameters || {})
-                            }
+                            delta: {
+                              tool_calls: [{
+                                index: 0,
+                                id: `call_${Date.now()}`,
+                                type: "function",
+                                function: {
+                                  name: toolJson.name,
+                                  arguments: JSON.stringify(toolJson.parameters || {})
+                                }
+                              }]
+                            },
+                            finish_reason: "tool_calls"
                           }]
                         }
-                        json.choices[0].finish_reason = "tool_calls"
-                        controller.enqueue(encoder.encode("data: " + JSON.stringify(json) + "\n\n"))
+                        controller.enqueue(encoder.encode("data: " + JSON.stringify(toolEvent) + "\n\n"))
                         continue
                       } catch {
                         // JSON not complete yet, continue accumulating
                       }
                     }
                     
-                    // If we're accumulating tool_code, don't send content deltas
+                    // If we're accumulating tool_call, don't send content deltas
+                    if (accumulatedContent.includes("<tool_call>") && !toolCallSent) {
+                      continue
+                    }
+                    
+                    // Also check for tool_code format (legacy)
                     if (accumulatedContent.includes("<tool_code>") && !toolCallSent) {
+                      const legacyMatch = accumulatedContent.match(/<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/)
+                      if (legacyMatch) {
+                        try {
+                          const toolJson = JSON.parse(legacyMatch[1])
+                          toolCallSent = true
+                          const toolEvent = {
+                            ...json,
+                            choices: [{
+                              index: 0,
+                              delta: {
+                                tool_calls: [{
+                                  index: 0,
+                                  id: `call_${Date.now()}`,
+                                  type: "function",
+                                  function: {
+                                    name: toolJson.name,
+                                    arguments: JSON.stringify(toolJson.parameters || {})
+                                  }
+                                }]
+                              },
+                              finish_reason: "tool_calls"
+                            }]
+                          }
+                          controller.enqueue(encoder.encode("data: " + JSON.stringify(toolEvent) + "\n\n"))
+                          continue
+                        } catch {}
+                      }
                       continue
                     }
                   }
                   
-                  // Skip if we already sent tool call
+                  // Handle finish_reason
                   if (toolCallSent && json.choices?.[0]?.finish_reason === "stop") {
                     json.choices[0].finish_reason = "tool_calls"
                   }
                   
                   controller.enqueue(encoder.encode("data: " + JSON.stringify(json) + "\n\n"))
                 } catch {
-                  controller.enqueue(encoder.encode(part + "\n\n"))
+                  // Pass through unparseable data
+                  controller.enqueue(encoder.encode(trimmed + "\n\n"))
                 }
               }
             }
@@ -203,14 +341,20 @@ export namespace Provider {
           return new Response(text, response)
         }
         
-        // Check if response has <tool_code> in content
+        // Check if response has tool_call or tool_code in content
         if (data.choices?.[0]?.message?.content) {
           const content = data.choices[0].message.content
-          const toolCodeMatch = content.match(/<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/)
           
-          if (toolCodeMatch) {
+          // Check for tool_call format
+          let toolMatch = content.match(/<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/)
+          // Also check legacy tool_code format
+          if (!toolMatch) {
+            toolMatch = content.match(/<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/)
+          }
+          
+          if (toolMatch) {
             try {
-              const toolJson = JSON.parse(toolCodeMatch[1])
+              const toolJson = JSON.parse(toolMatch[1])
               // Convert to proper tool_calls format
               data.choices[0].message.tool_calls = [{
                 id: `call_${Date.now()}`,
@@ -221,11 +365,23 @@ export namespace Provider {
                 }
               }]
               // Remove the XML from content
-              data.choices[0].message.content = content.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, "").trim() || null
+              data.choices[0].message.content = content
+                .replace(/<tool_call>[\s\S]*?<\/tool_call>/g, "")
+                .replace(/<tool_code>[\s\S]*?<\/tool_code>/g, "")
+                .trim() || null
               data.choices[0].finish_reason = "tool_calls"
             } catch {
               // If parsing fails, leave as-is
             }
+          }
+          
+          // Handle thinking tags
+          const thinkMatch = content.match(/<thinking>([\s\S]*?)<\/thinking>/)
+          if (thinkMatch) {
+            // Store thinking content (could be used for reasoning display)
+            data.choices[0].message.content = content
+              .replace(/<thinking>[\s\S]*?<\/thinking>/g, "")
+              .trim() || null
           }
         }
         
