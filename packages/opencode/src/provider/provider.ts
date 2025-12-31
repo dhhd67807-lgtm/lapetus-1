@@ -96,6 +96,7 @@ export namespace Provider {
           const decoder = new TextDecoder()
           let buffer = ""
           let accumulatedContent = ""
+          let toolCallSent = false
           
           const stream = new ReadableStream({
             async pull(controller) {
@@ -106,18 +107,31 @@ export namespace Provider {
               }
               
               buffer += decoder.decode(value, { stream: true })
-              const lines = buffer.split("\n")
-              buffer = lines.pop() || ""
               
-              for (const line of lines) {
-                if (!line.startsWith("data: ")) {
-                  controller.enqueue(encoder.encode(line + "\n"))
+              // Split by "data: " to handle space-separated events
+              const parts = buffer.split(/(?=data: )/)
+              buffer = ""
+              
+              for (let i = 0; i < parts.length; i++) {
+                let part = parts[i].trim()
+                if (!part) continue
+                
+                // Check if this is a complete event (ends with } or [DONE])
+                const isComplete = part.endsWith("}") || part.includes("[DONE]")
+                if (!isComplete && i === parts.length - 1) {
+                  // Last part might be incomplete, save for next iteration
+                  buffer = part
                   continue
                 }
                 
-                const data = line.slice(6)
+                if (!part.startsWith("data: ")) {
+                  controller.enqueue(encoder.encode(part + "\n\n"))
+                  continue
+                }
+                
+                const data = part.slice(6).trim()
                 if (data === "[DONE]") {
-                  controller.enqueue(encoder.encode(line + "\n"))
+                  controller.enqueue(encoder.encode("data: [DONE]\n\n"))
                   continue
                 }
                 
@@ -130,9 +144,10 @@ export namespace Provider {
                     
                     // Check if we have a complete <tool_code> block
                     const toolCodeMatch = accumulatedContent.match(/<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/)
-                    if (toolCodeMatch) {
+                    if (toolCodeMatch && !toolCallSent) {
                       try {
                         const toolJson = JSON.parse(toolCodeMatch[1])
+                        toolCallSent = true
                         // Send tool call delta
                         json.choices[0].delta = {
                           tool_calls: [{
@@ -146,16 +161,27 @@ export namespace Provider {
                           }]
                         }
                         json.choices[0].finish_reason = "tool_calls"
-                        accumulatedContent = ""
+                        controller.enqueue(encoder.encode("data: " + JSON.stringify(json) + "\n\n"))
+                        continue
                       } catch {
                         // JSON not complete yet, continue accumulating
                       }
                     }
+                    
+                    // If we're accumulating tool_code, don't send content deltas
+                    if (accumulatedContent.includes("<tool_code>") && !toolCallSent) {
+                      continue
+                    }
                   }
                   
-                  controller.enqueue(encoder.encode("data: " + JSON.stringify(json) + "\n"))
+                  // Skip if we already sent tool call
+                  if (toolCallSent && json.choices?.[0]?.finish_reason === "stop") {
+                    json.choices[0].finish_reason = "tool_calls"
+                  }
+                  
+                  controller.enqueue(encoder.encode("data: " + JSON.stringify(json) + "\n\n"))
                 } catch {
-                  controller.enqueue(encoder.encode(line + "\n"))
+                  controller.enqueue(encoder.encode(part + "\n\n"))
                 }
               }
             }
