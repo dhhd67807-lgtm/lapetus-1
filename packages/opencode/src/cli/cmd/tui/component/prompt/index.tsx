@@ -549,21 +549,8 @@ export function Prompt(props: PromptProps) {
       return
     }
     
-    // Check if folder is selected
+    // Folder must be selected (prompt box is hidden if not)
     if (!local.folder.isSelected()) {
-      toast.show({
-        variant: "warning",
-        message: "Please select a folder first",
-        duration: 3000,
-      })
-      dialog.replace(() => (
-        <DialogFolder 
-          currentPath={sync.data.path.directory}
-          onSelect={(folderPath) => {
-            local.folder.set(folderPath)
-          }}
-        />
-      ))
       return
     }
     
@@ -798,6 +785,44 @@ export function Prompt(props: PromptProps) {
         promptPartTypeId={() => promptPartTypeId}
       />
       <box ref={(r) => (anchor = r)}>
+        <Show when={local.folder.isSelected()} fallback={
+          <box
+            border={["top", "bottom"]}
+            borderColor={theme.backgroundElement}
+            customBorderChars={{
+              ...EmptyBorder,
+              horizontal: "─",
+            }}
+          >
+            <box
+              paddingLeft={1}
+              paddingRight={1}
+              paddingTop={1}
+              paddingBottom={1}
+              flexShrink={0}
+              flexGrow={1}
+              flexDirection="row"
+              justifyContent="center"
+            >
+              <box 
+                onMouseUp={() => {
+                  dialog.replace(() => (
+                    <DialogFolder 
+                      currentPath={local.folder.current() || sync.data.path.directory}
+                      onSelect={(folderPath) => {
+                        local.folder.set(folderPath)
+                      }}
+                    />
+                  ))
+                }}
+              >
+                <text fg={theme.warning}>
+                  📁 Select a folder to start
+                </text>
+              </box>
+            </box>
+          </box>
+        }>
         <box
           border={["top", "bottom"]}
           borderColor={theme.backgroundElement}
@@ -828,8 +853,8 @@ export function Prompt(props: PromptProps) {
                 ))
               }}
             >
-              <text fg={local.folder.isSelected() ? theme.success : theme.warning}>
-                {local.folder.isSelected() ? `📁 ${path.basename(local.folder.current()!)}` : "📁 Select folder"}
+              <text fg={theme.success}>
+                📁 {path.basename(local.folder.current()!)}
               </text>
             </box>
             <text fg={highlight()}>→</text>
@@ -1115,6 +1140,7 @@ export function Prompt(props: PromptProps) {
             </box>
           </Show>
         </box>
+        </Show>
       </box>
     </>
   )

@@ -335,16 +335,45 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     const folder = iife(() => {
       const [folderStore, setFolderStore] = createStore<{
         selected: string | null
+        recent: string[]
       }>({
         selected: null,
+        recent: [],
       })
+
+      // Load recent folders from file
+      const file = Bun.file(path.join(Global.Path.state, "folders.json"))
+      file
+        .json()
+        .then((x) => {
+          if (Array.isArray(x.recent)) setFolderStore("recent", x.recent)
+        })
+        .catch(() => {})
+
+      function save() {
+        Bun.write(
+          file,
+          JSON.stringify({
+            recent: folderStore.recent,
+          }),
+        )
+      }
 
       return {
         current() {
           return folderStore.selected
         },
+        recent() {
+          return folderStore.recent
+        },
         set(folderPath: string | null) {
           setFolderStore("selected", folderPath)
+          if (folderPath) {
+            // Add to recent, keeping only last 10
+            const newRecent = [folderPath, ...folderStore.recent.filter(f => f !== folderPath)].slice(0, 10)
+            setFolderStore("recent", newRecent)
+            save()
+          }
         },
         clear() {
           setFolderStore("selected", null)
