@@ -81,6 +81,57 @@ export namespace Provider {
       }
     },
     async lapetus() {
+      // Custom fetch that converts <tool_code> XML to proper tool_calls format
+      const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+        const response = await globalThis.fetch(url, init)
+        
+        // Only process non-streaming responses
+        const contentType = response.headers.get("content-type") || ""
+        if (contentType.includes("text/event-stream")) {
+          return response
+        }
+        
+        const text = await response.text()
+        let data: any
+        try {
+          data = JSON.parse(text)
+        } catch {
+          return new Response(text, response)
+        }
+        
+        // Check if response has <tool_code> in content
+        if (data.choices?.[0]?.message?.content) {
+          const content = data.choices[0].message.content
+          const toolCodeMatch = content.match(/<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/)
+          
+          if (toolCodeMatch) {
+            try {
+              const toolJson = JSON.parse(toolCodeMatch[1])
+              // Convert to proper tool_calls format
+              data.choices[0].message.tool_calls = [{
+                id: `call_${Date.now()}`,
+                type: "function",
+                function: {
+                  name: toolJson.name,
+                  arguments: JSON.stringify(toolJson.parameters || {})
+                }
+              }]
+              // Remove the XML from content
+              data.choices[0].message.content = content.replace(/<tool_code>[\s\S]*?<\/tool_code>/g, "").trim() || null
+              data.choices[0].finish_reason = "tool_calls"
+            } catch {
+              // If parsing fails, leave as-is
+            }
+          }
+        }
+        
+        return new Response(JSON.stringify(data), {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        })
+      }
+      
       return {
         autoload: true,
         async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
@@ -90,6 +141,7 @@ export namespace Provider {
         options: {
           includeUsage: false,
           timeout: 120000,
+          fetch: customFetch as typeof globalThis.fetch,
         },
       }
     },
@@ -640,11 +692,11 @@ export namespace Provider {
       },
       models: {
         "gpt-5.2": {
-          id: "gpt-5.2",
+          id: "ent-gpt-5.2-agent",
           providerID: "lapetus",
           name: "GPT-5.2",
           family: "gpt",
-          api: { id: "gpt-5.2", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          api: { id: "ent-gpt-5.2-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 128000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
@@ -654,11 +706,11 @@ export namespace Provider {
           status: "active",
         },
         "gpt-5.1": {
-          id: "gpt-5.1",
+          id: "ent-gpt-5.1-agent",
           providerID: "lapetus",
           name: "GPT-5.1",
           family: "gpt",
-          api: { id: "gpt-5.1", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          api: { id: "ent-gpt-5.1-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 128000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
@@ -668,11 +720,11 @@ export namespace Provider {
           status: "active",
         },
         "gpt-5": {
-          id: "gpt-5",
+          id: "ent-gpt-5-agent",
           providerID: "lapetus",
           name: "GPT-5",
           family: "gpt",
-          api: { id: "gpt-5", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          api: { id: "ent-gpt-5-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 128000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
@@ -682,11 +734,11 @@ export namespace Provider {
           status: "active",
         },
         "claude-opus-4.5": {
-          id: "claude-opus-4.5",
+          id: "ent-claude-opus-4.5-agent",
           providerID: "lapetus",
           name: "Claude Opus 4.5",
           family: "claude",
-          api: { id: "claude-opus-4.5", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          api: { id: "ent-claude-opus-4.5-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 200000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
@@ -696,11 +748,11 @@ export namespace Provider {
           status: "active",
         },
         "claude-sonnet-4": {
-          id: "sonnet-4",
+          id: "ent-claude-sonnet-4-agent",
           providerID: "lapetus",
           name: "Claude Sonnet 4",
           family: "claude",
-          api: { id: "sonnet-4", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          api: { id: "ent-claude-sonnet-4-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 200000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
@@ -718,7 +770,7 @@ export namespace Provider {
           options: {},
           limit: { context: 128000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: false, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
           headers: {},
           release_date: "2025-01-01",
           status: "active",
@@ -732,7 +784,7 @@ export namespace Provider {
           options: {},
           limit: { context: 128000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: false, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
           headers: {},
           release_date: "2025-01-01",
           status: "active",
@@ -746,7 +798,7 @@ export namespace Provider {
           options: {},
           limit: { context: 128000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: false, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
           headers: {},
           release_date: "2025-01-01",
           status: "active",
