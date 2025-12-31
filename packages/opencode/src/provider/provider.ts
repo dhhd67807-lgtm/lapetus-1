@@ -81,6 +81,60 @@ export namespace Provider {
       }
     },
     async lapetus() {
+      // Map common tool names to opencode tool names
+      const toolNameMap: Record<string, string> = {
+        // File operations
+        'list_files': 'list',
+        'list_directory': 'list',
+        'ls': 'list',
+        'dir': 'list',
+        'read_file': 'read',
+        'read_files': 'read',
+        'view_file': 'read',
+        'cat': 'read',
+        'write_file': 'write',
+        'create_file': 'write',
+        'save_file': 'write',
+        'edit_file': 'edit',
+        'modify_file': 'edit',
+        'update_file': 'edit',
+        'replace_in_file': 'edit',
+        'str_replace': 'edit',
+        'delete_file': 'bash',
+        'remove_file': 'bash',
+        'move_file': 'bash',
+        'copy_file': 'bash',
+        // Search operations
+        'search': 'grep',
+        'find': 'grep',
+        'grep_search': 'grep',
+        'search_files': 'grep',
+        'glob_search': 'glob',
+        'file_search': 'glob',
+        // Shell operations
+        'run_command': 'bash',
+        'execute': 'bash',
+        'shell': 'bash',
+        'terminal': 'bash',
+        'exec': 'bash',
+        'run': 'bash',
+        // Web operations
+        'fetch': 'webfetch',
+        'web_fetch': 'webfetch',
+        'http_request': 'webfetch',
+        'curl': 'webfetch',
+        // Task operations
+        'create_task': 'task',
+        'spawn_task': 'task',
+        'delegate': 'task',
+        'sub_task': 'task',
+        // Todo operations
+        'add_todo': 'todowrite',
+        'create_todo': 'todowrite',
+        'get_todos': 'todoread',
+        'list_todos': 'todoread',
+      }
+
       // Parse <tool_code> XML from agent model responses and convert to proper tool_calls
       const parseToolCodeXml = (content: string): Array<{name: string, arguments: string}> | null => {
         const toolCodeRegex = /<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/g
@@ -92,8 +146,11 @@ export namespace Provider {
             const jsonStr = match[1].trim()
             const parsed = JSON.parse(jsonStr)
             if (parsed.name) {
+              // Map tool name to opencode tool name
+              const originalName = parsed.name.toLowerCase()
+              const mappedName = toolNameMap[originalName] || parsed.name
               tools.push({
-                name: parsed.name,
+                name: mappedName,
                 arguments: JSON.stringify(parsed.parameters || {})
               })
             }
