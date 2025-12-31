@@ -155,6 +155,7 @@ export function Prompt(props: PromptProps) {
   let promptPartTypeId: number
 
   sdk.event.on(TuiEvent.PromptAppend.type, (evt) => {
+    if (!input) return
     input.insertText(evt.properties.text)
     setTimeout(() => {
       input.getLayoutNode().markDirty()
@@ -164,6 +165,7 @@ export function Prompt(props: PromptProps) {
   })
 
   createEffect(() => {
+    if (!input) return
     if (props.disabled) input.cursorColor = theme.backgroundElement
     if (!props.disabled) input.cursorColor = theme.text
   })
@@ -208,6 +210,7 @@ export function Prompt(props: PromptProps) {
         category: "Prompt",
         disabled: true,
         onSelect: (dialog) => {
+          if (!input) return
           input.extmarks.clear()
           input.clear()
           dialog.clear()
@@ -220,7 +223,7 @@ export function Prompt(props: PromptProps) {
         keybind: "input_submit",
         category: "Prompt",
         onSelect: (dialog) => {
-          if (!input.focused) return
+          if (!input?.focused) return
           submit()
           dialog.clear()
         },
@@ -249,8 +252,8 @@ export function Prompt(props: PromptProps) {
         disabled: status().type === "idle",
         category: "Session",
         onSelect: (dialog) => {
-          if (autocomplete.visible) return
-          if (!input.focused) return
+          if (autocomplete?.visible) return
+          if (!input?.focused) return
           // TODO: this should be its own command
           if (store.mode === "shell") {
             setStore("mode", "normal")
@@ -293,7 +296,7 @@ export function Prompt(props: PromptProps) {
 
           const value = trigger === "prompt" ? "" : text
           const content = await Editor.open({ value, renderer })
-          if (!content) return
+          if (!content || !input) return
 
           input.setText(content)
 
@@ -361,14 +364,17 @@ export function Prompt(props: PromptProps) {
   })
 
   createEffect(() => {
-    input.focus()
+    input?.focus()
   })
 
   onMount(() => {
-    promptPartTypeId = input.extmarks.registerType("prompt-part")
+    if (input) {
+      promptPartTypeId = input.extmarks.registerType("prompt-part")
+    }
   })
 
   function restoreExtmarksFromParts(parts: PromptInfo["parts"]) {
+    if (!input) return
     input.extmarks.clear()
     setStore("extmarkToPartIndex", new Map())
 
@@ -413,6 +419,7 @@ export function Prompt(props: PromptProps) {
   }
 
   function syncExtmarksWithPromptParts() {
+    if (!input) return
     const allExtmarks = input.extmarks.getAllForTypeId(promptPartTypeId)
     setStore(
       produce((draft) => {
@@ -453,7 +460,7 @@ export function Prompt(props: PromptProps) {
       category: "Prompt",
       disabled: !store.prompt.input,
       onSelect: (dialog) => {
-        if (!store.prompt.input) return
+        if (!store.prompt.input || !input) return
         stash.push({
           input: store.prompt.input,
           parts: store.prompt.parts,
@@ -472,7 +479,7 @@ export function Prompt(props: PromptProps) {
       disabled: stash.list().length === 0,
       onSelect: (dialog) => {
         const entry = stash.pop()
-        if (entry) {
+        if (entry && input) {
           input.setText(entry.input)
           setStore("prompt", { input: entry.input, parts: entry.parts })
           restoreExtmarksFromParts(entry.parts)
@@ -490,6 +497,7 @@ export function Prompt(props: PromptProps) {
         dialog.replace(() => (
           <DialogStash
             onSelect={(entry) => {
+              if (!input) return
               input.setText(entry.input)
               setStore("prompt", { input: entry.input, parts: entry.parts })
               restoreExtmarksFromParts(entry.parts)
@@ -503,24 +511,26 @@ export function Prompt(props: PromptProps) {
 
   props.ref?.({
     get focused() {
-      return input.focused
+      return input?.focused ?? false
     },
     get current() {
       return store.prompt
     },
     focus() {
-      input.focus()
+      input?.focus()
     },
     blur() {
-      input.blur()
+      input?.blur()
     },
     set(prompt) {
+      if (!input) return
       input.setText(prompt.input)
       setStore("prompt", prompt)
       restoreExtmarksFromParts(prompt.parts)
       input.gotoBufferEnd()
     },
     reset() {
+      if (!input) return
       input.clear()
       input.extmarks.clear()
       setStore("prompt", {
@@ -840,23 +850,6 @@ export function Prompt(props: PromptProps) {
             flexDirection="row"
             gap={1}
           >
-            <box 
-              flexShrink={0} 
-              onMouseUp={() => {
-                dialog.replace(() => (
-                  <DialogFolder 
-                    currentPath={local.folder.current() || sync.data.path.directory}
-                    onSelect={(folderPath) => {
-                      local.folder.set(folderPath)
-                    }}
-                  />
-                ))
-              }}
-            >
-              <text fg={theme.success}>
-                📁 {path.basename(local.folder.current()!)}
-              </text>
-            </box>
             <text fg={highlight()}>→</text>
             <box flexGrow={1}>
               <textarea
@@ -1060,6 +1053,21 @@ export function Prompt(props: PromptProps) {
                   }
             }
           />
+        </box>
+        <box 
+          paddingLeft={1}
+          onMouseUp={() => {
+            dialog.replace(() => (
+              <DialogFolder 
+                currentPath={local.folder.current() || sync.data.path.directory}
+                onSelect={(folderPath) => {
+                  local.folder.set(folderPath)
+                }}
+              />
+            ))
+          }}
+        >
+          <text fg={theme.textMuted}>~ {local.folder.current()}</text>
         </box>
         <box flexDirection="row" justifyContent="space-between">
           <Show when={status().type !== "idle"} fallback={<text />}>
