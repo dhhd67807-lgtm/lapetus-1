@@ -1133,8 +1133,10 @@ export function Prompt(props: PromptProps) {
           </Show>
         </box>
         <box 
-          paddingLeft={1}
+          paddingRight={1}
           paddingTop={1}
+          flexDirection="row"
+          justifyContent="flex-end"
           onMouseUp={() => {
             dialog.replace(() => (
               <DialogFolder 
