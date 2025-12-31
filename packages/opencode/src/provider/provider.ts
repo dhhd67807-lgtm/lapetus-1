@@ -100,9 +100,12 @@ export namespace Provider {
 
         const response = await fetch(input, init)
         
-        // Fix missing index in tool_calls for non-streaming responses
-        if (response.headers.get('content-type')?.includes('application/json')) {
-          const data = await response.json()
+        // Clone response and read body as text first
+        const responseText = await response.text()
+        
+        try {
+          // Try to parse as JSON and fix missing index in tool_calls
+          const data = JSON.parse(responseText)
           if (data.choices) {
             for (const choice of data.choices) {
               if (choice.message?.tool_calls) {
@@ -117,11 +120,18 @@ export namespace Provider {
           return new Response(JSON.stringify(data), {
             status: response.status,
             statusText: response.statusText,
+            headers: new Headers({
+              'content-type': 'application/json',
+            })
+          })
+        } catch {
+          // If not valid JSON, return original response text
+          return new Response(responseText, {
+            status: response.status,
+            statusText: response.statusText,
             headers: response.headers
           })
         }
-
-        return response
       }
 
       return {
