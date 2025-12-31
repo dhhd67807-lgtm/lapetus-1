@@ -83,278 +83,124 @@ export namespace Provider {
     async lapetus() {
       // Map common tool names to opencode tool names
       const toolNameMap: Record<string, string> = {
-        // File operations
-        'list_files': 'list',
-        'list_directory': 'list',
-        'ls': 'list',
-        'dir': 'list',
-        'read_file': 'read',
-        'read_files': 'read',
-        'view_file': 'read',
-        'cat': 'read',
-        'write_file': 'write',
-        'create_file': 'write',
-        'save_file': 'write',
-        'edit_file': 'edit',
-        'modify_file': 'edit',
-        'update_file': 'edit',
-        'replace_in_file': 'edit',
-        'str_replace': 'edit',
-        'delete_file': 'bash',
-        'remove_file': 'bash',
-        'move_file': 'bash',
-        'copy_file': 'bash',
-        // Search operations
-        'search': 'grep',
-        'find': 'grep',
-        'grep_search': 'grep',
-        'search_files': 'grep',
-        'glob_search': 'glob',
-        'file_search': 'glob',
-        // Shell operations
-        'run_command': 'bash',
-        'execute': 'bash',
-        'shell': 'bash',
-        'terminal': 'bash',
-        'exec': 'bash',
-        'run': 'bash',
-        // Web operations
-        'fetch': 'webfetch',
-        'web_fetch': 'webfetch',
-        'http_request': 'webfetch',
-        'curl': 'webfetch',
-        // Task operations
-        'create_task': 'task',
-        'spawn_task': 'task',
-        'delegate': 'task',
-        'sub_task': 'task',
-        // Todo operations
-        'add_todo': 'todowrite',
-        'create_todo': 'todowrite',
-        'get_todos': 'todoread',
-        'list_todos': 'todoread',
+        'list_files': 'list', 'list_directory': 'list', 'ls': 'list', 'dir': 'list',
+        'read_file': 'read', 'read_files': 'read', 'view_file': 'read', 'cat': 'read',
+        'write_file': 'write', 'create_file': 'write', 'save_file': 'write',
+        'edit_file': 'edit', 'modify_file': 'edit', 'update_file': 'edit', 'replace_in_file': 'edit', 'str_replace': 'edit',
+        'delete_file': 'bash', 'remove_file': 'bash', 'move_file': 'bash', 'copy_file': 'bash',
+        'search': 'grep', 'find': 'grep', 'grep_search': 'grep', 'search_files': 'grep',
+        'glob_search': 'glob', 'file_search': 'glob',
+        'run_command': 'bash', 'execute': 'bash', 'shell': 'bash', 'terminal': 'bash', 'exec': 'bash', 'run': 'bash',
+        'fetch': 'webfetch', 'web_fetch': 'webfetch', 'http_request': 'webfetch', 'curl': 'webfetch',
+        'create_task': 'task', 'spawn_task': 'task', 'delegate': 'task', 'sub_task': 'task',
+        'add_todo': 'todowrite', 'create_todo': 'todowrite', 'get_todos': 'todoread', 'list_todos': 'todoread',
       }
 
-      // Parse <tool_code> XML from agent model responses and convert to proper tool_calls
-      const parseToolCodeXml = (content: string): Array<{name: string, arguments: string}> | null => {
-        const toolCodeRegex = /<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/g
-        const tools: Array<{name: string, arguments: string}> = []
-        
+      // Parse <tool_code> XML from agent model responses
+      const parseToolCode = (content: string): Array<{name: string, args: string}> | null => {
+        const tools: Array<{name: string, args: string}> = []
+        const regex = /<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/g
         let match
-        while ((match = toolCodeRegex.exec(content)) !== null) {
+        while ((match = regex.exec(content)) !== null) {
           try {
-            const jsonStr = match[1].trim()
-            const parsed = JSON.parse(jsonStr)
+            const parsed = JSON.parse(match[1].trim())
             if (parsed.name) {
-              // Map tool name to opencode tool name
-              const originalName = parsed.name.toLowerCase()
-              const mappedName = toolNameMap[originalName] || parsed.name
-              tools.push({
-                name: mappedName,
-                arguments: JSON.stringify(parsed.parameters || {})
-              })
+              const mappedName = toolNameMap[parsed.name.toLowerCase()] || parsed.name
+              tools.push({ name: mappedName, args: JSON.stringify(parsed.parameters || {}) })
             }
-          } catch {
-            // Skip invalid JSON
-          }
+          } catch { /* skip invalid */ }
         }
-        
         return tools.length > 0 ? tools : null
       }
 
-      // Custom fetch that handles tool calling for Lapetus agent models
       const lapetusCustomFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-        let hasTools = false
         let modifiedInit = init
         
-        // Check if request has tools and disable streaming
+        // Disable streaming when tools are present
         if (init?.body && typeof init.body === 'string') {
           try {
             const body = JSON.parse(init.body)
             if (body.tools && body.tools.length > 0) {
-              hasTools = true
               body.stream = false
-              modifiedInit = {
-                ...init,
-                body: JSON.stringify(body)
-              }
+              modifiedInit = { ...init, body: JSON.stringify(body) }
             }
-          } catch {
-            // If body parsing fails, continue with original request
-          }
+          } catch { /* continue */ }
         }
 
         const response = await fetch(input, modifiedInit)
+        const contentType = response.headers.get('content-type') || ''
         
-        // If no tools, return response as-is (streaming)
-        if (!hasTools) {
+        // Handle streaming responses as-is
+        if (contentType.includes('text/event-stream')) {
           return response
         }
         
-        // For tool requests, parse response and convert to SSE format
+        // Handle JSON responses (non-streaming with tools)
         const text = await response.text()
         try {
           const data = JSON.parse(text)
           
-          // Process each choice
           for (const choice of data.choices || []) {
             const msg = choice.message
-            
-            // Check if content contains <tool_code> XML (agent model format)
-            if (msg?.content && msg.content.includes('<tool_code>')) {
-              const parsedTools = parseToolCodeXml(msg.content)
-              if (parsedTools) {
-                // Convert to proper tool_calls format
-                msg.tool_calls = parsedTools.map((tool, idx) => ({
-                  index: idx,
-                  id: `call_${Date.now()}_${idx}`,
+            // Parse <tool_code> XML and convert to tool_calls
+            if (msg?.content?.includes('<tool_code>')) {
+              const tools = parseToolCode(msg.content)
+              if (tools) {
+                msg.tool_calls = tools.map((t, i) => ({
+                  index: i,
+                  id: `call_${Date.now()}_${i}`,
                   type: 'function',
-                  function: {
-                    name: tool.name,
-                    arguments: tool.arguments
-                  }
+                  function: { name: t.name, arguments: t.args }
                 }))
-                // Clear content since we converted to tool calls
                 msg.content = ''
                 choice.finish_reason = 'tool_calls'
               }
             }
-            
-            // Fix missing index in existing tool_calls
+            // Fix missing index
             if (msg?.tool_calls) {
-              for (let i = 0; i < msg.tool_calls.length; i++) {
-                if (msg.tool_calls[i].index === undefined) {
-                  msg.tool_calls[i].index = i
-                }
-              }
+              msg.tool_calls.forEach((tc: any, i: number) => { if (tc.index === undefined) tc.index = i })
             }
           }
           
-          // Convert to SSE format that streamText expects
-          const sseChunks: string[] = []
-          
+          // Convert to SSE format for streamText
+          const chunks: string[] = []
           for (const choice of data.choices || []) {
             const msg = choice.message
+            chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: { role: msg.role }, finish_reason: null }] })}\n\n`)
             
-            // First chunk: role
-            sseChunks.push(`data: ${JSON.stringify({
-              id: data.id,
-              object: "chat.completion.chunk",
-              created: data.created,
-              model: data.model,
-              choices: [{
-                index: choice.index || 0,
-                delta: { role: msg.role },
-                finish_reason: null
-              }]
-            })}\n\n`)
-            
-            // Content chunks (if any)
             if (msg.content) {
-              sseChunks.push(`data: ${JSON.stringify({
-                id: data.id,
-                object: "chat.completion.chunk",
-                created: data.created,
-                model: data.model,
-                choices: [{
-                  index: choice.index || 0,
-                  delta: { content: msg.content },
-                  finish_reason: null
-                }]
-              })}\n\n`)
+              chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: { content: msg.content }, finish_reason: null }] })}\n\n`)
             }
             
-            // Tool calls chunks
             if (msg.tool_calls) {
               for (const tc of msg.tool_calls) {
-                // Tool call start
-                sseChunks.push(`data: ${JSON.stringify({
-                  id: data.id,
-                  object: "chat.completion.chunk",
-                  created: data.created,
-                  model: data.model,
-                  choices: [{
-                    index: choice.index || 0,
-                    delta: {
-                      tool_calls: [{
-                        index: tc.index,
-                        id: tc.id,
-                        type: "function",
-                        function: { name: tc.function.name, arguments: "" }
-                      }]
-                    },
-                    finish_reason: null
-                  }]
-                })}\n\n`)
-                
-                // Tool call arguments
-                sseChunks.push(`data: ${JSON.stringify({
-                  id: data.id,
-                  object: "chat.completion.chunk",
-                  created: data.created,
-                  model: data.model,
-                  choices: [{
-                    index: choice.index || 0,
-                    delta: {
-                      tool_calls: [{
-                        index: tc.index,
-                        function: { arguments: tc.function.arguments }
-                      }]
-                    },
-                    finish_reason: null
-                  }]
-                })}\n\n`)
+                chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: { tool_calls: [{ index: tc.index, id: tc.id, type: "function", function: { name: tc.function.name, arguments: "" } }] }, finish_reason: null }] })}\n\n`)
+                chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: { tool_calls: [{ index: tc.index, function: { arguments: tc.function.arguments } }] }, finish_reason: null }] })}\n\n`)
               }
             }
             
-            // Final chunk with finish_reason
-            sseChunks.push(`data: ${JSON.stringify({
-              id: data.id,
-              object: "chat.completion.chunk",
-              created: data.created,
-              model: data.model,
-              choices: [{
-                index: choice.index || 0,
-                delta: {},
-                finish_reason: choice.finish_reason || "stop"
-              }],
-              usage: data.usage
-            })}\n\n`)
+            chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: {}, finish_reason: choice.finish_reason || "stop" }], usage: data.usage })}\n\n`)
           }
+          chunks.push("data: [DONE]\n\n")
           
-          sseChunks.push("data: [DONE]\n\n")
-          
-          return new Response(sseChunks.join(""), {
+          return new Response(chunks.join(""), {
             status: 200,
-            headers: new Headers({
-              'content-type': 'text/event-stream',
-              'cache-control': 'no-cache',
-              'connection': 'keep-alive'
-            })
+            headers: new Headers({ 'content-type': 'text/event-stream' })
           })
         } catch {
-          // If parsing fails, return original response
-          return new Response(text, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: response.headers
-          })
+          return new Response(text, { status: response.status, headers: response.headers })
         }
       }
 
       return {
         autoload: true,
         async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
-          // Use chatModel for @ai-sdk/openai-compatible
-          if (typeof sdk.chatModel === "function") {
-            return sdk.chatModel(modelID)
-          }
-          // Fallback to languageModel
+          if (typeof sdk.chatModel === "function") return sdk.chatModel(modelID)
           return sdk.languageModel(modelID)
         },
         options: {
           includeUsage: false,
-          timeout: 120000, // 2 minutes timeout for cold start
+          timeout: 120000,
           fetch: lapetusCustomFetch,
         },
       }
