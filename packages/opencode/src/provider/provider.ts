@@ -81,6 +81,165 @@ export namespace Provider {
       }
     },
     async lapetus() {
+      // Custom fetch that handles tool calling by converting non-streaming response to SSE format
+      const lapetusCustomFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        let hasTools = false
+        let modifiedInit = init
+        
+        // Check if request has tools and disable streaming
+        if (init?.body && typeof init.body === 'string') {
+          try {
+            const body = JSON.parse(init.body)
+            if (body.tools && body.tools.length > 0) {
+              hasTools = true
+              body.stream = false
+              modifiedInit = {
+                ...init,
+                body: JSON.stringify(body)
+              }
+            }
+          } catch {
+            // If body parsing fails, continue with original request
+          }
+        }
+
+        const response = await fetch(input, modifiedInit)
+        
+        // If no tools, return response as-is (streaming)
+        if (!hasTools) {
+          return response
+        }
+        
+        // For tool requests, convert non-streaming response to SSE format
+        const text = await response.text()
+        try {
+          const data = JSON.parse(text)
+          
+          // Fix missing index in tool_calls
+          if (data.choices) {
+            for (const choice of data.choices) {
+              if (choice.message?.tool_calls) {
+                for (let i = 0; i < choice.message.tool_calls.length; i++) {
+                  if (choice.message.tool_calls[i].index === undefined) {
+                    choice.message.tool_calls[i].index = i
+                  }
+                }
+              }
+            }
+          }
+          
+          // Convert to SSE format that streamText expects
+          const sseChunks: string[] = []
+          
+          for (const choice of data.choices || []) {
+            const msg = choice.message
+            
+            // First chunk: role
+            sseChunks.push(`data: ${JSON.stringify({
+              id: data.id,
+              object: "chat.completion.chunk",
+              created: data.created,
+              model: data.model,
+              choices: [{
+                index: choice.index || 0,
+                delta: { role: msg.role },
+                finish_reason: null
+              }]
+            })}\n\n`)
+            
+            // Content chunks (if any)
+            if (msg.content) {
+              sseChunks.push(`data: ${JSON.stringify({
+                id: data.id,
+                object: "chat.completion.chunk",
+                created: data.created,
+                model: data.model,
+                choices: [{
+                  index: choice.index || 0,
+                  delta: { content: msg.content },
+                  finish_reason: null
+                }]
+              })}\n\n`)
+            }
+            
+            // Tool calls chunks
+            if (msg.tool_calls) {
+              for (const tc of msg.tool_calls) {
+                // Tool call start
+                sseChunks.push(`data: ${JSON.stringify({
+                  id: data.id,
+                  object: "chat.completion.chunk",
+                  created: data.created,
+                  model: data.model,
+                  choices: [{
+                    index: choice.index || 0,
+                    delta: {
+                      tool_calls: [{
+                        index: tc.index,
+                        id: tc.id,
+                        type: "function",
+                        function: { name: tc.function.name, arguments: "" }
+                      }]
+                    },
+                    finish_reason: null
+                  }]
+                })}\n\n`)
+                
+                // Tool call arguments
+                sseChunks.push(`data: ${JSON.stringify({
+                  id: data.id,
+                  object: "chat.completion.chunk",
+                  created: data.created,
+                  model: data.model,
+                  choices: [{
+                    index: choice.index || 0,
+                    delta: {
+                      tool_calls: [{
+                        index: tc.index,
+                        function: { arguments: tc.function.arguments }
+                      }]
+                    },
+                    finish_reason: null
+                  }]
+                })}\n\n`)
+              }
+            }
+            
+            // Final chunk with finish_reason
+            sseChunks.push(`data: ${JSON.stringify({
+              id: data.id,
+              object: "chat.completion.chunk",
+              created: data.created,
+              model: data.model,
+              choices: [{
+                index: choice.index || 0,
+                delta: {},
+                finish_reason: choice.finish_reason || "stop"
+              }],
+              usage: data.usage
+            })}\n\n`)
+          }
+          
+          sseChunks.push("data: [DONE]\n\n")
+          
+          return new Response(sseChunks.join(""), {
+            status: 200,
+            headers: new Headers({
+              'content-type': 'text/event-stream',
+              'cache-control': 'no-cache',
+              'connection': 'keep-alive'
+            })
+          })
+        } catch {
+          // If parsing fails, return original response
+          return new Response(text, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+          })
+        }
+      }
+
       return {
         autoload: true,
         async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
@@ -94,6 +253,7 @@ export namespace Provider {
         options: {
           includeUsage: false,
           timeout: 120000, // 2 minutes timeout for cold start
+          fetch: lapetusCustomFetch,
         },
       }
     },
@@ -652,7 +812,7 @@ export namespace Provider {
           options: {},
           limit: { context: 200000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: false, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
           headers: {},
           release_date: "2025-01-01",
           status: "active",
