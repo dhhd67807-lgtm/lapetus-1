@@ -1,5 +1,5 @@
 import { Prompt, type PromptRef } from "@tui/component/prompt"
-import { createMemo, createSignal, Match, onMount, Show, Switch } from "solid-js"
+import { createEffect, createMemo, createSignal, Match, onMount, Show, Switch } from "solid-js"
 import { useTheme } from "@tui/context/theme"
 import { Logo } from "../component/logo"
 import { Locale } from "@/util/locale"
@@ -32,9 +32,15 @@ export function Home() {
   })
 
   const isFirstTimeUser = createMemo(() => sync.data.session.length === 0)
-  const [showOnboarding, setShowOnboarding] = createSignal(
-    isFirstTimeUser() && !kv.get("onboarding_complete", false)
-  )
+  const onboardingComplete = createMemo(() => kv.get("onboarding_complete", false))
+  const [showOnboarding, setShowOnboarding] = createSignal(false)
+  
+  // Update showOnboarding reactively when data is ready
+  createEffect(() => {
+    if (sync.status === "complete" && isFirstTimeUser() && !onboardingComplete()) {
+      setShowOnboarding(true)
+    }
+  })
 
   const Hint = (
     <Show when={connectedMcpCount() > 0}>

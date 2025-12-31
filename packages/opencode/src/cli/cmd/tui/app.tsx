@@ -270,6 +270,10 @@ function App() {
       (isEmpty, wasEmpty) => {
         // only trigger when we transition into an empty-provider state
         if (!isEmpty || wasEmpty) return
+        // Don't show provider dialog for first-time users - they'll see onboarding first
+        // and Lapetus provider should be auto-loaded
+        const isFirstTimeUser = sync.data.session.length === 0
+        if (isFirstTimeUser) return
         dialog.replace(() => <DialogProviderList />)
       },
     ),
