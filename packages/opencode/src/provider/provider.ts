@@ -81,7 +81,31 @@ export namespace Provider {
       }
     },
     async lapetus() {
-      // Custom fetch that handles tool calling by converting non-streaming response to SSE format
+      // Parse <tool_code> XML from agent model responses and convert to proper tool_calls
+      const parseToolCodeXml = (content: string): Array<{name: string, arguments: string}> | null => {
+        const toolCodeRegex = /<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/g
+        const tools: Array<{name: string, arguments: string}> = []
+        
+        let match
+        while ((match = toolCodeRegex.exec(content)) !== null) {
+          try {
+            const jsonStr = match[1].trim()
+            const parsed = JSON.parse(jsonStr)
+            if (parsed.name) {
+              tools.push({
+                name: parsed.name,
+                arguments: JSON.stringify(parsed.parameters || {})
+              })
+            }
+          } catch {
+            // Skip invalid JSON
+          }
+        }
+        
+        return tools.length > 0 ? tools : null
+      }
+
+      // Custom fetch that handles tool calling for Lapetus agent models
       const lapetusCustomFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
         let hasTools = false
         let modifiedInit = init
@@ -110,19 +134,40 @@ export namespace Provider {
           return response
         }
         
-        // For tool requests, convert non-streaming response to SSE format
+        // For tool requests, parse response and convert to SSE format
         const text = await response.text()
         try {
           const data = JSON.parse(text)
           
-          // Fix missing index in tool_calls
-          if (data.choices) {
-            for (const choice of data.choices) {
-              if (choice.message?.tool_calls) {
-                for (let i = 0; i < choice.message.tool_calls.length; i++) {
-                  if (choice.message.tool_calls[i].index === undefined) {
-                    choice.message.tool_calls[i].index = i
+          // Process each choice
+          for (const choice of data.choices || []) {
+            const msg = choice.message
+            
+            // Check if content contains <tool_code> XML (agent model format)
+            if (msg?.content && msg.content.includes('<tool_code>')) {
+              const parsedTools = parseToolCodeXml(msg.content)
+              if (parsedTools) {
+                // Convert to proper tool_calls format
+                msg.tool_calls = parsedTools.map((tool, idx) => ({
+                  index: idx,
+                  id: `call_${Date.now()}_${idx}`,
+                  type: 'function',
+                  function: {
+                    name: tool.name,
+                    arguments: tool.arguments
                   }
+                }))
+                // Clear content since we converted to tool calls
+                msg.content = ''
+                choice.finish_reason = 'tool_calls'
+              }
+            }
+            
+            // Fix missing index in existing tool_calls
+            if (msg?.tool_calls) {
+              for (let i = 0; i < msg.tool_calls.length; i++) {
+                if (msg.tool_calls[i].index === undefined) {
+                  msg.tool_calls[i].index = i
                 }
               }
             }
@@ -803,14 +848,56 @@ export namespace Provider {
         apiKey: "Lapetusethan",
       },
       models: {
-        "claude-opus-4.5": {
-          id: "claude-opus-4.5",
+        "ent-claude-opus-4.5-agent": {
+          id: "ent-claude-opus-4.5-agent",
           providerID: "lapetus",
-          name: "Claude Opus 4.5",
+          name: "Claude Opus 4.5 (Agent)",
           family: "claude",
-          api: { id: "claude-opus-4.5", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          api: { id: "ent-claude-opus-4.5-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 200000, output: 32000 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "ent-gpt-5-agent": {
+          id: "ent-gpt-5-agent",
+          providerID: "lapetus",
+          name: "GPT-5 (Agent)",
+          family: "gpt",
+          api: { id: "ent-gpt-5-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 32000 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "ent-claude-sonnet-4-agent": {
+          id: "ent-claude-sonnet-4-agent",
+          providerID: "lapetus",
+          name: "Claude Sonnet 4 (Agent)",
+          family: "claude",
+          api: { id: "ent-claude-sonnet-4-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 200000, output: 32000 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "ent-gpt-5.2-agent": {
+          id: "ent-gpt-5.2-agent",
+          providerID: "lapetus",
+          name: "GPT-5.2 (Agent)",
+          family: "gpt",
+          api: { id: "ent-gpt-5.2-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
           capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
           headers: {},
