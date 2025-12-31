@@ -81,76 +81,47 @@ export namespace Provider {
       }
     },
     async lapetus() {
-      // Custom fetch that fixes missing 'index' field in tool_calls for Lapetus API
-      // Handles chunked streaming where JSON may be split across chunks
-      const fixToolCallsResponse = async (input: RequestInfo | URL, init?: RequestInit) => {
-        const response = await fetch(input, init)
-        
-        // Only process streaming responses
-        if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) {
-          return response
+      // Custom fetch that disables streaming for Lapetus API (tool calls don't work with streaming)
+      // and fixes missing 'index' field in tool_calls
+      const lapetusCustomFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        // Modify request to disable streaming since Lapetus API doesn't support tool calls in streaming mode
+        if (init?.body) {
+          try {
+            const body = JSON.parse(init.body as string)
+            body.stream = false
+            init = {
+              ...init,
+              body: JSON.stringify(body)
+            }
+          } catch {
+            // If body parsing fails, continue with original request
+          }
         }
 
-        let buffer = ''
-        const decoder = new TextDecoder()
-        const encoder = new TextEncoder()
-
-        const transformStream = new TransformStream({
-          transform(chunk, controller) {
-            buffer += decoder.decode(chunk, { stream: true })
-            
-            // Process complete lines only
-            const lines = buffer.split('\n')
-            // Keep the last potentially incomplete line in buffer
-            buffer = lines.pop() || ''
-            
-            let output = ''
-            for (const line of lines) {
-              if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                try {
-                  const jsonStr = line.slice(6).trim()
-                  if (jsonStr) {
-                    const data = JSON.parse(jsonStr)
-                    // Fix missing index in tool_calls
-                    if (data.choices) {
-                      for (const choice of data.choices) {
-                        if (choice.delta?.tool_calls) {
-                          for (let i = 0; i < choice.delta.tool_calls.length; i++) {
-                            if (choice.delta.tool_calls[i].index === undefined) {
-                              choice.delta.tool_calls[i].index = i
-                            }
-                          }
-                        }
-                      }
-                    }
-                    output += 'data: ' + JSON.stringify(data) + '\n'
+        const response = await fetch(input, init)
+        
+        // Fix missing index in tool_calls for non-streaming responses
+        if (response.headers.get('content-type')?.includes('application/json')) {
+          const data = await response.json()
+          if (data.choices) {
+            for (const choice of data.choices) {
+              if (choice.message?.tool_calls) {
+                for (let i = 0; i < choice.message.tool_calls.length; i++) {
+                  if (choice.message.tool_calls[i].index === undefined) {
+                    choice.message.tool_calls[i].index = i
                   }
-                } catch {
-                  // Pass through unchanged if JSON parsing fails
-                  output += line + '\n'
                 }
-              } else {
-                output += line + '\n'
               }
             }
-
-            if (output) {
-              controller.enqueue(encoder.encode(output))
-            }
-          },
-          flush(controller) {
-            // Process any remaining buffer content
-            if (buffer.trim()) {
-              controller.enqueue(encoder.encode(buffer + '\n'))
-            }
           }
-        })
+          return new Response(JSON.stringify(data), {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+          })
+        }
 
-        return new Response(response.body.pipeThrough(transformStream), {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers
-        })
+        return response
       }
 
       return {
@@ -170,7 +141,7 @@ export namespace Provider {
         options: {
           includeUsage: false,
           timeout: 120000, // 2 minutes timeout for cold start
-          fetch: fixToolCallsResponse,
+          fetch: lapetusCustomFetch,
         },
       }
     },
