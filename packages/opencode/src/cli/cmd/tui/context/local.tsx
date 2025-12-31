@@ -331,10 +331,35 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       },
     }
 
+    // Folder selection state
+    const folder = iife(() => {
+      const [folderStore, setFolderStore] = createStore<{
+        selected: string | null
+      }>({
+        selected: null,
+      })
+
+      return {
+        current() {
+          return folderStore.selected
+        },
+        set(folderPath: string | null) {
+          setFolderStore("selected", folderPath)
+        },
+        clear() {
+          setFolderStore("selected", null)
+        },
+        isSelected() {
+          return folderStore.selected !== null
+        },
+      }
+    })
+
     const result = {
       model,
       agent,
       mcp,
+      folder,
     }
     return result
   },

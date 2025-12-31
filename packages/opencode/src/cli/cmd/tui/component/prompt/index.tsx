@@ -30,6 +30,8 @@ import { DialogProvider as DialogProviderConnect } from "../dialog-provider"
 import { DialogAlert } from "../../ui/dialog-alert"
 import { DialogPrompt } from "../../ui/dialog-prompt"
 import { useToast } from "../../ui/toast"
+import { DialogFolder } from "../dialog-folder"
+import path from "path"
 
 export type PromptProps = {
   sessionID?: string
@@ -185,6 +187,21 @@ export function Prompt(props: PromptProps) {
 
   command.register(() => {
     return [
+      {
+        title: "Select folder",
+        value: "prompt.folder",
+        category: "Prompt",
+        onSelect: (dialog) => {
+          dialog.replace(() => (
+            <DialogFolder 
+              currentPath={local.folder.current() || sync.data.path.directory}
+              onSelect={(folderPath) => {
+                local.folder.set(folderPath)
+              }}
+            />
+          ))
+        },
+      },
       {
         title: "Clear prompt",
         value: "prompt.clear",
@@ -532,6 +549,24 @@ export function Prompt(props: PromptProps) {
       return
     }
     
+    // Check if folder is selected
+    if (!local.folder.isSelected()) {
+      toast.show({
+        variant: "warning",
+        message: "Please select a folder first",
+        duration: 3000,
+      })
+      dialog.replace(() => (
+        <DialogFolder 
+          currentPath={sync.data.path.directory}
+          onSelect={(folderPath) => {
+            local.folder.set(folderPath)
+          }}
+        />
+      ))
+      return
+    }
+    
     const sessionID = props.sessionID
       ? props.sessionID
       : await (async () => {
@@ -780,6 +815,23 @@ export function Prompt(props: PromptProps) {
             flexDirection="row"
             gap={1}
           >
+            <box 
+              flexShrink={0} 
+              onMouseUp={() => {
+                dialog.replace(() => (
+                  <DialogFolder 
+                    currentPath={local.folder.current() || sync.data.path.directory}
+                    onSelect={(folderPath) => {
+                      local.folder.set(folderPath)
+                    }}
+                  />
+                ))
+              }}
+            >
+              <text fg={local.folder.isSelected() ? theme.success : theme.warning}>
+                {local.folder.isSelected() ? `📁 ${path.basename(local.folder.current()!)}` : "📁 Select folder"}
+              </text>
+            </box>
             <text fg={highlight()}>→</text>
             <box flexGrow={1}>
               <textarea
