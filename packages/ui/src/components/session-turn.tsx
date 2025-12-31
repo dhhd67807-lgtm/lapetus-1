@@ -40,8 +40,16 @@ function computeStatusFromPart(part: PartType | undefined): string | undefined {
       case "webfetch":
         return "Searching the web"
       case "edit":
-      case "write":
+      case "write": {
+        // Try to get the filename from the tool input
+        const state = part.state as any
+        const filePath = state?.input?.filePath || state?.input?.file || state?.metadata?.filePath
+        if (filePath) {
+          const fileName = filePath.split("/").pop()
+          return `Generating ${fileName}`
+        }
         return "Making edits"
+      }
       case "bash":
         return "Running commands"
       default:
