@@ -113,6 +113,14 @@ export namespace LLM {
 
     const tools = await resolveTools(input)
 
+    // Log tools being sent for debugging
+    l.info("tools resolved", {
+      toolCount: Object.keys(tools).length,
+      toolNames: Object.keys(tools),
+      providerID: input.model.providerID,
+      toolcallCapability: input.model.capabilities.toolcall,
+    })
+
     return streamText({
       onError(error) {
         l.error("stream error", {
