@@ -783,223 +783,31 @@ export namespace Provider {
         })),
       }
     }
-
-    // Add Lapetus provider with built-in API key (no user key needed)
-    database["lapetus"] = {
-      id: "lapetus",
-      name: "Lapetus",
-      source: "custom",
-      env: [],  // No env needed - API key is built-in
-      options: {
-        baseURL: "https://lapetuse-api.onrender.com/v1",
-        apiKey: "Lapetusethan",
-      },
-      models: {
-        "gpt-5.2": {
-          id: "ent-gpt-5.2-agent",
-          providerID: "lapetus",
-          name: "GPT-5.2",
-          family: "gpt",
-          api: { id: "ent-gpt-5.2-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 32000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "gpt-5.1": {
-          id: "ent-gpt-5.1-agent",
-          providerID: "lapetus",
-          name: "GPT-5.1",
-          family: "gpt",
-          api: { id: "ent-gpt-5.1-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 32000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "gpt-5": {
-          id: "ent-gpt-5-agent",
-          providerID: "lapetus",
-          name: "GPT-5",
-          family: "gpt",
-          api: { id: "ent-gpt-5-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 32000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "claude-opus-4.5": {
-          id: "ent-claude-opus-4.5-agent",
-          providerID: "lapetus",
-          name: "Claude Opus 4.5",
-          family: "claude",
-          api: { id: "ent-claude-opus-4.5-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 200000, output: 32000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "claude-sonnet-4": {
-          id: "ent-claude-sonnet-4-agent",
-          providerID: "lapetus",
-          name: "Claude Sonnet 4",
-          family: "claude",
-          api: { id: "ent-claude-sonnet-4-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 200000, output: 32000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "gemini-2.5-pro": {
-          id: "gemini-2.5-pro",
-          providerID: "lapetus",
-          name: "Gemini 2.5 Pro",
-          family: "gemini",
-          api: { id: "gemini-2.5-pro", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 32000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: false, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "gemini-2.5-flash": {
-          id: "gemini-2.5-flash",
-          providerID: "lapetus",
-          name: "Gemini 2.5 Flash",
-          family: "gemini",
-          api: { id: "gemini-2.5-flash", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 32000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: false, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "deepseek-v3.1": {
-          id: "deepseek-v3.1",
-          providerID: "lapetus",
-          name: "DeepSeek V3.1",
-          family: "deepseek",
-          api: { id: "deepseek-v3.1", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 128000, output: 32000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: false, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-      },
-    }
     
     // Auto-register Lapetus provider (no API key needed from user)
-    providers["lapetus"] = database["lapetus"] as Info
+    if (database["lapetus"] && isProviderAllowed("lapetus")) {
+      const lapetusProvider = database["lapetus"] as Info
+      lapetusProvider.source = "custom"
+      lapetusProvider.options = {
+        ...lapetusProvider.options,
+        baseURL: "https://lapetuse-api.onrender.com/v1",
+        apiKey: "Lapetusethan",
+      }
+      providers["lapetus"] = lapetusProvider
+    }
 
     // Add Lapetus NVIDIA provider with default API key
     const nvidiaDefaultApiKey = "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"
-    database["lapetus-nvidia"] = {
-      id: "lapetus-nvidia",
-      name: "Lapetus",
-      source: "custom",
-      env: ["LAPETUS_NVIDIA_API_KEY"],
-      options: {
+    if (database["lapetus-nvidia"] && isProviderAllowed("lapetus-nvidia")) {
+      const lapetusNvidiaProvider = database["lapetus-nvidia"] as Info
+      lapetusNvidiaProvider.source = "custom"
+      lapetusNvidiaProvider.options = {
+        ...lapetusNvidiaProvider.options,
         baseURL: "https://integrate.api.nvidia.com/v1",
         apiKey: nvidiaDefaultApiKey,
-      },
-      models: {
-        "deepseek-ai/deepseek-v3.2": {
-          id: "deepseek-ai/deepseek-v3.2",
-          providerID: "lapetus-nvidia",
-          name: "DeepSeek V3.2",
-          family: "deepseek",
-          api: { id: "deepseek-ai/deepseek-v3.2", url: "https://integrate.api.nvidia.com/v1", npm: "@ai-sdk/github-copilot" },
-          options: {},
-          limit: { context: 128000, output: 8192 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: true, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "mistralai/mistral-large-3-675b-instruct-2512": {
-          id: "mistralai/mistral-large-3-675b-instruct-2512",
-          providerID: "lapetus-nvidia",
-          name: "Mistral Large 3 675B",
-          family: "mistral",
-          api: { id: "mistralai/mistral-large-3-675b-instruct-2512", url: "https://integrate.api.nvidia.com/v1", npm: "@ai-sdk/github-copilot" },
-          options: {},
-          limit: { context: 128000, output: 8192 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "minimaxai/minimax-m2": {
-          id: "minimaxai/minimax-m2",
-          providerID: "lapetus-nvidia",
-          name: "MiniMax M2",
-          family: "minimax",
-          api: { id: "minimaxai/minimax-m2", url: "https://integrate.api.nvidia.com/v1", npm: "@ai-sdk/github-copilot" },
-          options: {},
-          limit: { context: 128000, output: 8192 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "deepseek-ai/deepseek-v3.1-terminus": {
-          id: "deepseek-ai/deepseek-v3.1-terminus",
-          providerID: "lapetus-nvidia",
-          name: "DeepSeek V3.1 Terminus",
-          family: "deepseek",
-          api: { id: "deepseek-ai/deepseek-v3.1-terminus", url: "https://integrate.api.nvidia.com/v1", npm: "@ai-sdk/github-copilot" },
-          options: {},
-          limit: { context: 128000, output: 8192 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "qwen/qwen3-coder-480b-a35b-instruct": {
-          id: "qwen/qwen3-coder-480b-a35b-instruct",
-          providerID: "lapetus-nvidia",
-          name: "Qwen3 Coder 480B",
-          family: "qwen",
-          api: { id: "qwen/qwen3-coder-480b-a35b-instruct", url: "https://integrate.api.nvidia.com/v1", npm: "@ai-sdk/github-copilot" },
-          options: {},
-          limit: { context: 128000, output: 8192 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-      },
+      }
+      providers["lapetus-nvidia"] = lapetusNvidiaProvider
     }
-    
-    // Auto-register Lapetus NVIDIA provider with default API key
-    providers["lapetus-nvidia"] = database["lapetus-nvidia"] as Info
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {
       const existing = providers[providerID]
