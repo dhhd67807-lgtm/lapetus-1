@@ -82,7 +82,7 @@ export namespace Provider {
     },
     async lapetus() {
       // Custom fetch that fixes missing 'index' field in tool_calls for Lapetus API
-      // Optimized for minimal lag using TransformStream
+      // Handles chunked streaming where JSON may be split across chunks
       const fixToolCallsResponse = async (input: RequestInfo | URL, init?: RequestInit) => {
         const response = await fetch(input, init)
         
@@ -91,18 +91,25 @@ export namespace Provider {
           return response
         }
 
-        // Use TransformStream for efficient streaming with minimal buffering
+        let buffer = ''
+        const decoder = new TextDecoder()
+        const encoder = new TextEncoder()
+
         const transformStream = new TransformStream({
           transform(chunk, controller) {
-            const text = new TextDecoder().decode(chunk)
-            const lines = text.split('\n')
+            buffer += decoder.decode(chunk, { stream: true })
+            
+            // Process complete lines only
+            const lines = buffer.split('\n')
+            // Keep the last potentially incomplete line in buffer
+            buffer = lines.pop() || ''
+            
             let output = ''
-
             for (const line of lines) {
               if (line.startsWith('data: ') && line !== 'data: [DONE]') {
                 try {
-                  const jsonStr = line.slice(6)
-                  if (jsonStr.trim()) {
+                  const jsonStr = line.slice(6).trim()
+                  if (jsonStr) {
                     const data = JSON.parse(jsonStr)
                     // Fix missing index in tool_calls
                     if (data.choices) {
@@ -119,6 +126,7 @@ export namespace Provider {
                     output += 'data: ' + JSON.stringify(data) + '\n'
                   }
                 } catch {
+                  // Pass through unchanged if JSON parsing fails
                   output += line + '\n'
                 }
               } else {
@@ -127,7 +135,13 @@ export namespace Provider {
             }
 
             if (output) {
-              controller.enqueue(new TextEncoder().encode(output))
+              controller.enqueue(encoder.encode(output))
+            }
+          },
+          flush(controller) {
+            // Process any remaining buffer content
+            if (buffer.trim()) {
+              controller.enqueue(encoder.encode(buffer + '\n'))
             }
           }
         })
