@@ -86,6 +86,7 @@ export namespace Provider {
         options: {
           includeUsage: false,
           streamMode: "text-stream",
+          timeout: 120000, // 2 minutes timeout for cold start
         },
       }
     },
