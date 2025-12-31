@@ -81,9 +81,9 @@ export namespace Provider {
       }
     },
     async lapetus() {
-      // Map common tool names to opencode tool names
+      // Map common tool names to opencode tool names (list_files is now a real tool)
       const toolNameMap: Record<string, string> = {
-        'list_files': 'list', 'list_directory': 'list', 'ls': 'list', 'dir': 'list',
+        'list_directory': 'list_files', 'ls': 'list_files', 'dir': 'list_files',
         'read_file': 'read', 'read_files': 'read', 'view_file': 'read', 'cat': 'read',
         'write_file': 'write', 'create_file': 'write', 'save_file': 'write',
         'edit_file': 'edit', 'modify_file': 'edit', 'update_file': 'edit', 'replace_in_file': 'edit', 'str_replace': 'edit',

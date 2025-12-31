@@ -3,6 +3,7 @@ import { EditTool } from "./edit"
 import { GlobTool } from "./glob"
 import { GrepTool } from "./grep"
 import { ListTool } from "./ls"
+import { ListFilesTool } from "./list_files"
 import { BatchTool } from "./batch"
 import { ReadTool } from "./read"
 import { TaskTool } from "./task"
@@ -96,6 +97,7 @@ export namespace ToolRegistry {
       GlobTool,
       GrepTool,
       ListTool,
+      ListFilesTool,  // Lapetus agent model tool
       EditTool,
       WriteTool,
       TaskTool,
