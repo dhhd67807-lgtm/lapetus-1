@@ -81,6 +81,76 @@ export namespace Provider {
       }
     },
     async lapetus() {
+      // Custom fetch that fixes missing 'index' field in tool_calls for Lapetus API
+      const fixToolCallsResponse = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const response = await fetch(input, init)
+        
+        // Only process streaming responses
+        if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) {
+          return response
+        }
+
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        const encoder = new TextEncoder()
+
+        const transformedStream = new ReadableStream({
+          async start(controller) {
+            try {
+              while (true) {
+                const { done, value } = await reader.read()
+                if (done) {
+                  controller.close()
+                  break
+                }
+
+                const text = decoder.decode(value, { stream: true })
+                const lines = text.split('\n')
+                const transformedLines: string[] = []
+
+                for (const line of lines) {
+                  if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                    try {
+                      const jsonStr = line.slice(6)
+                      if (jsonStr.trim()) {
+                        const data = JSON.parse(jsonStr)
+                        // Fix missing index in tool_calls
+                        if (data.choices) {
+                          for (const choice of data.choices) {
+                            if (choice.delta?.tool_calls) {
+                              choice.delta.tool_calls = choice.delta.tool_calls.map((tc: any, idx: number) => ({
+                                index: tc.index ?? idx,
+                                ...tc
+                              }))
+                            }
+                          }
+                        }
+                        transformedLines.push('data: ' + JSON.stringify(data))
+                      }
+                    } catch {
+                      // If JSON parsing fails, pass through unchanged
+                      transformedLines.push(line)
+                    }
+                  } else {
+                    transformedLines.push(line)
+                  }
+                }
+
+                controller.enqueue(encoder.encode(transformedLines.join('\n')))
+              }
+            } catch (e) {
+              controller.error(e)
+            }
+          }
+        })
+
+        return new Response(transformedStream, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        })
+      }
+
       return {
         autoload: true,
         async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
@@ -98,6 +168,7 @@ export namespace Provider {
         options: {
           includeUsage: false,
           timeout: 120000, // 2 minutes timeout for cold start
+          fetch: fixToolCallsResponse,
         },
       }
     },
