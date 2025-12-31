@@ -1066,6 +1066,30 @@ export function Prompt(props: PromptProps) {
               <box flexShrink={0} flexDirection="row" gap={1}>
                 {/* @ts-ignore // SpinnerOptions doesn't support marginLeft */}
                 <spinner marginLeft={1} color={spinnerDef().color} frames={spinnerDef().frames} interval={40} />
+                {/* Show thinking message when busy */}
+                <Show when={status().type === "busy"}>
+                  {(() => {
+                    const thinkingMessages = [
+                      "Thinking...",
+                      "Cooking up a response...",
+                      "Processing your request...",
+                      "Analyzing...",
+                      "Working on it...",
+                    ]
+                    const [messageIndex, setMessageIndex] = createSignal(Math.floor(Math.random() * thinkingMessages.length))
+                    
+                    onMount(() => {
+                      const timer = setInterval(() => {
+                        setMessageIndex((prev) => (prev + 1) % thinkingMessages.length)
+                      }, 3000)
+                      onCleanup(() => clearInterval(timer))
+                    })
+                    
+                    return (
+                      <text fg={theme.textMuted}>{thinkingMessages[messageIndex()]}</text>
+                    )
+                  })()}
+                </Show>
                 <box flexDirection="row" gap={1} flexShrink={0}>
                   {(() => {
                     const retry = createMemo(() => {
