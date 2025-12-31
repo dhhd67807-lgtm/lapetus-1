@@ -1023,9 +1023,6 @@ export function Prompt(props: PromptProps) {
               syntaxStyle={syntax()}
             />
             </box>
-            <box flexShrink={0} justifyContent="flex-end">
-              <ShiningModelName text={local.model.parsed().model} muted={keybind.leader} />
-            </box>
           </box>
         </box>
         <box
@@ -1053,21 +1050,6 @@ export function Prompt(props: PromptProps) {
                   }
             }
           />
-        </box>
-        <box 
-          paddingLeft={1}
-          onMouseUp={() => {
-            dialog.replace(() => (
-              <DialogFolder 
-                currentPath={local.folder.current() || sync.data.path.directory}
-                onSelect={(folderPath) => {
-                  local.folder.set(folderPath)
-                }}
-              />
-            ))
-          }}
-        >
-          <text fg={theme.textMuted}>~ {local.folder.current()}</text>
         </box>
         <box flexDirection="row" justifyContent="space-between">
           <Show when={status().type !== "idle"} fallback={<text />}>
@@ -1147,6 +1129,21 @@ export function Prompt(props: PromptProps) {
               <ShiningModelName text={local.model.parsed().model} muted={false} />
             </box>
           </Show>
+        </box>
+        <box 
+          paddingLeft={1}
+          onMouseUp={() => {
+            dialog.replace(() => (
+              <DialogFolder 
+                currentPath={local.folder.current() || sync.data.path.directory}
+                onSelect={(folderPath) => {
+                  local.folder.set(folderPath)
+                }}
+              />
+            ))
+          }}
+        >
+          <text fg={theme.textMuted}>~ {local.folder.current()}</text>
         </box>
         </Show>
       </box>
