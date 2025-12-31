@@ -1023,6 +1023,9 @@ export function Prompt(props: PromptProps) {
               syntaxStyle={syntax()}
             />
             </box>
+            <box flexShrink={0} justifyContent="flex-end">
+              <ShiningModelName text={local.model.parsed().model} muted={keybind.leader} />
+            </box>
           </box>
         </box>
         <box
@@ -1126,7 +1129,6 @@ export function Prompt(props: PromptProps) {
                   {store.interrupt > 0 ? "again to interrupt" : "interrupt"}
                 </span>
               </text>
-              <ShiningModelName text={local.model.parsed().model} muted={false} />
             </box>
           </Show>
         </box>
