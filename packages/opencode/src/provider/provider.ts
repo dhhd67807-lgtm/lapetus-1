@@ -137,15 +137,11 @@ export namespace Provider {
       return {
         autoload: true,
         async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
-          // Use chat method for custom local SDK (@ai-sdk/github-copilot)
-          if (typeof sdk.chat === "function") {
-            return sdk.chat(modelID)
-          }
-          // Fallback to chatModel for npm @ai-sdk/openai-compatible
+          // Use chatModel for @ai-sdk/openai-compatible
           if (typeof sdk.chatModel === "function") {
             return sdk.chatModel(modelID)
           }
-          // Final fallback to languageModel
+          // Fallback to languageModel
           return sdk.languageModel(modelID)
         },
         options: {
@@ -706,7 +702,7 @@ export namespace Provider {
           providerID: "lapetus",
           name: "Claude Opus 4.5",
           family: "claude",
-          api: { id: "claude-opus-4.5", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/github-copilot" },
+          api: { id: "claude-opus-4.5", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 200000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
