@@ -81,117 +81,6 @@ export namespace Provider {
       }
     },
     async lapetus() {
-      // Map common tool names to opencode tool names (list_files is now a real tool)
-      const toolNameMap: Record<string, string> = {
-        'list_directory': 'list_files', 'ls': 'list_files', 'dir': 'list_files',
-        'read_file': 'read', 'read_files': 'read', 'view_file': 'read', 'cat': 'read',
-        'write_file': 'write', 'create_file': 'write', 'save_file': 'write',
-        'edit_file': 'edit', 'modify_file': 'edit', 'update_file': 'edit', 'replace_in_file': 'edit', 'str_replace': 'edit',
-        'delete_file': 'bash', 'remove_file': 'bash', 'move_file': 'bash', 'copy_file': 'bash',
-        'search': 'grep', 'find': 'grep', 'grep_search': 'grep', 'search_files': 'grep',
-        'glob_search': 'glob', 'file_search': 'glob',
-        'run_command': 'bash', 'execute': 'bash', 'shell': 'bash', 'terminal': 'bash', 'exec': 'bash', 'run': 'bash',
-        'fetch': 'webfetch', 'web_fetch': 'webfetch', 'http_request': 'webfetch', 'curl': 'webfetch',
-        'create_task': 'task', 'spawn_task': 'task', 'delegate': 'task', 'sub_task': 'task',
-        'add_todo': 'todowrite', 'create_todo': 'todowrite', 'get_todos': 'todoread', 'list_todos': 'todoread',
-      }
-
-      // Parse <tool_code> XML from agent model responses
-      const parseToolCode = (content: string): Array<{name: string, args: string}> | null => {
-        const tools: Array<{name: string, args: string}> = []
-        const regex = /<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/g
-        let match
-        while ((match = regex.exec(content)) !== null) {
-          try {
-            const parsed = JSON.parse(match[1].trim())
-            if (parsed.name) {
-              const mappedName = toolNameMap[parsed.name.toLowerCase()] || parsed.name
-              tools.push({ name: mappedName, args: JSON.stringify(parsed.parameters || {}) })
-            }
-          } catch { /* skip invalid */ }
-        }
-        return tools.length > 0 ? tools : null
-      }
-
-      const lapetusCustomFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-        let modifiedInit = init
-        
-        // Disable streaming when tools are present
-        if (init?.body && typeof init.body === 'string') {
-          try {
-            const body = JSON.parse(init.body)
-            if (body.tools && body.tools.length > 0) {
-              body.stream = false
-              modifiedInit = { ...init, body: JSON.stringify(body) }
-            }
-          } catch { /* continue */ }
-        }
-
-        const response = await fetch(input, modifiedInit)
-        const contentType = response.headers.get('content-type') || ''
-        
-        // Handle streaming responses as-is
-        if (contentType.includes('text/event-stream')) {
-          return response
-        }
-        
-        // Handle JSON responses (non-streaming with tools)
-        const text = await response.text()
-        try {
-          const data = JSON.parse(text)
-          
-          for (const choice of data.choices || []) {
-            const msg = choice.message
-            // Parse <tool_code> XML and convert to tool_calls
-            if (msg?.content?.includes('<tool_code>')) {
-              const tools = parseToolCode(msg.content)
-              if (tools) {
-                msg.tool_calls = tools.map((t, i) => ({
-                  index: i,
-                  id: `call_${Date.now()}_${i}`,
-                  type: 'function',
-                  function: { name: t.name, arguments: t.args }
-                }))
-                msg.content = ''
-                choice.finish_reason = 'tool_calls'
-              }
-            }
-            // Fix missing index
-            if (msg?.tool_calls) {
-              msg.tool_calls.forEach((tc: any, i: number) => { if (tc.index === undefined) tc.index = i })
-            }
-          }
-          
-          // Convert to SSE format for streamText
-          const chunks: string[] = []
-          for (const choice of data.choices || []) {
-            const msg = choice.message
-            chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: { role: msg.role }, finish_reason: null }] })}\n\n`)
-            
-            if (msg.content) {
-              chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: { content: msg.content }, finish_reason: null }] })}\n\n`)
-            }
-            
-            if (msg.tool_calls) {
-              for (const tc of msg.tool_calls) {
-                chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: { tool_calls: [{ index: tc.index, id: tc.id, type: "function", function: { name: tc.function.name, arguments: "" } }] }, finish_reason: null }] })}\n\n`)
-                chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: { tool_calls: [{ index: tc.index, function: { arguments: tc.function.arguments } }] }, finish_reason: null }] })}\n\n`)
-              }
-            }
-            
-            chunks.push(`data: ${JSON.stringify({ id: data.id, object: "chat.completion.chunk", created: data.created, model: data.model, choices: [{ index: 0, delta: {}, finish_reason: choice.finish_reason || "stop" }], usage: data.usage })}\n\n`)
-          }
-          chunks.push("data: [DONE]\n\n")
-          
-          return new Response(chunks.join(""), {
-            status: 200,
-            headers: new Headers({ 'content-type': 'text/event-stream' })
-          })
-        } catch {
-          return new Response(text, { status: response.status, headers: response.headers })
-        }
-      }
-
       return {
         autoload: true,
         async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
@@ -201,7 +90,6 @@ export namespace Provider {
         options: {
           includeUsage: false,
           timeout: 120000,
-          fetch: lapetusCustomFetch,
         },
       }
     },
@@ -751,26 +639,12 @@ export namespace Provider {
         apiKey: "Lapetusethan",
       },
       models: {
-        "ent-claude-opus-4.5-agent": {
-          id: "ent-claude-opus-4.5-agent",
+        "gpt-5.2": {
+          id: "gpt-5.2",
           providerID: "lapetus",
-          name: "Claude Opus 4.5 (Agent)",
-          family: "claude",
-          api: { id: "ent-claude-opus-4.5-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
-          options: {},
-          limit: { context: 200000, output: 32000 },
-          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
-          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
-          headers: {},
-          release_date: "2025-01-01",
-          status: "active",
-        },
-        "ent-gpt-5-agent": {
-          id: "ent-gpt-5-agent",
-          providerID: "lapetus",
-          name: "GPT-5 (Agent)",
+          name: "GPT-5.2",
           family: "gpt",
-          api: { id: "ent-gpt-5-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          api: { id: "gpt-5.2", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 128000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
@@ -779,12 +653,40 @@ export namespace Provider {
           release_date: "2025-01-01",
           status: "active",
         },
-        "ent-claude-sonnet-4-agent": {
-          id: "ent-claude-sonnet-4-agent",
+        "gpt-5.1": {
+          id: "gpt-5.1",
           providerID: "lapetus",
-          name: "Claude Sonnet 4 (Agent)",
+          name: "GPT-5.1",
+          family: "gpt",
+          api: { id: "gpt-5.1", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 32000 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "gpt-5": {
+          id: "gpt-5",
+          providerID: "lapetus",
+          name: "GPT-5",
+          family: "gpt",
+          api: { id: "gpt-5", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 32000 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "claude-opus-4.5": {
+          id: "claude-opus-4.5",
+          providerID: "lapetus",
+          name: "Claude Opus 4.5",
           family: "claude",
-          api: { id: "ent-claude-sonnet-4-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          api: { id: "claude-opus-4.5", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 200000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
@@ -793,12 +695,54 @@ export namespace Provider {
           release_date: "2025-01-01",
           status: "active",
         },
-        "ent-gpt-5.2-agent": {
-          id: "ent-gpt-5.2-agent",
+        "claude-sonnet-4": {
+          id: "sonnet-4",
           providerID: "lapetus",
-          name: "GPT-5.2 (Agent)",
-          family: "gpt",
-          api: { id: "ent-gpt-5.2-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          name: "Claude Sonnet 4",
+          family: "claude",
+          api: { id: "sonnet-4", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 200000, output: 32000 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "gemini-2.5-pro": {
+          id: "gemini-2.5-pro",
+          providerID: "lapetus",
+          name: "Gemini 2.5 Pro",
+          family: "gemini",
+          api: { id: "gemini-2.5-pro", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 32000 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "gemini-2.5-flash": {
+          id: "gemini-2.5-flash",
+          providerID: "lapetus",
+          name: "Gemini 2.5 Flash",
+          family: "gemini",
+          api: { id: "gemini-2.5-flash", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
+          options: {},
+          limit: { context: 128000, output: 32000 },
+          cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
+          capabilities: { temperature: true, reasoning: false, attachment: false, toolcall: true, input: { text: true, audio: false, image: false, video: false, pdf: false }, output: { text: true, audio: false, image: false, video: false, pdf: false }, interleaved: false },
+          headers: {},
+          release_date: "2025-01-01",
+          status: "active",
+        },
+        "deepseek-v3.1": {
+          id: "deepseek-v3.1",
+          providerID: "lapetus",
+          name: "DeepSeek V3.1",
+          family: "deepseek",
+          api: { id: "deepseek-v3.1", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/openai-compatible" },
           options: {},
           limit: { context: 128000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
