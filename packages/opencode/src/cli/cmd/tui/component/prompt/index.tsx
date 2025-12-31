@@ -32,6 +32,7 @@ import { DialogPrompt } from "../../ui/dialog-prompt"
 import { useToast } from "../../ui/toast"
 import { DialogFolder } from "../dialog-folder"
 import path from "path"
+import os from "os"
 
 export type PromptProps = {
   sessionID?: string
@@ -1148,7 +1149,7 @@ export function Prompt(props: PromptProps) {
             ))
           }}
         >
-          <text fg={theme.textMuted}>~ {local.folder.current()}</text>
+          <text fg={theme.textMuted}>~/{local.folder.current()?.replace(os.homedir() + "/", "") || ""}</text>
         </box>
         </Show>
       </box>
