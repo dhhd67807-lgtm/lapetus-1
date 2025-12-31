@@ -835,7 +835,7 @@ export function Prompt(props: PromptProps) {
             <text fg={highlight()}>→</text>
             <box flexGrow={1}>
               <textarea
-                placeholder={props.sessionID ? "Add a follow-up" : `Ask anything... "${PLACEHOLDERS[store.placeholder]}"`}
+                placeholder={props.sessionID ? "Add a follow-up" : "Ask anything..."}
                 textColor={keybind.leader ? theme.textMuted : theme.text}
                 focusedTextColor={keybind.leader ? theme.textMuted : theme.text}
                 minHeight={1}
