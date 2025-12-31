@@ -85,12 +85,90 @@ export namespace Provider {
       const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
         const response = await globalThis.fetch(url, init)
         
-        // Only process non-streaming responses
+        // Check if streaming
         const contentType = response.headers.get("content-type") || ""
         if (contentType.includes("text/event-stream")) {
-          return response
+          // For streaming, we need to transform the SSE events
+          const reader = response.body?.getReader()
+          if (!reader) return response
+          
+          const encoder = new TextEncoder()
+          const decoder = new TextDecoder()
+          let buffer = ""
+          let accumulatedContent = ""
+          
+          const stream = new ReadableStream({
+            async pull(controller) {
+              const { done, value } = await reader.read()
+              if (done) {
+                controller.close()
+                return
+              }
+              
+              buffer += decoder.decode(value, { stream: true })
+              const lines = buffer.split("\n")
+              buffer = lines.pop() || ""
+              
+              for (const line of lines) {
+                if (!line.startsWith("data: ")) {
+                  controller.enqueue(encoder.encode(line + "\n"))
+                  continue
+                }
+                
+                const data = line.slice(6)
+                if (data === "[DONE]") {
+                  controller.enqueue(encoder.encode(line + "\n"))
+                  continue
+                }
+                
+                try {
+                  const json = JSON.parse(data)
+                  const delta = json.choices?.[0]?.delta
+                  
+                  if (delta?.content) {
+                    accumulatedContent += delta.content
+                    
+                    // Check if we have a complete <tool_code> block
+                    const toolCodeMatch = accumulatedContent.match(/<tool_code>\s*([\s\S]*?)\s*<\/tool_code>/)
+                    if (toolCodeMatch) {
+                      try {
+                        const toolJson = JSON.parse(toolCodeMatch[1])
+                        // Send tool call delta
+                        json.choices[0].delta = {
+                          tool_calls: [{
+                            index: 0,
+                            id: `call_${Date.now()}`,
+                            type: "function",
+                            function: {
+                              name: toolJson.name,
+                              arguments: JSON.stringify(toolJson.parameters || {})
+                            }
+                          }]
+                        }
+                        json.choices[0].finish_reason = "tool_calls"
+                        accumulatedContent = ""
+                      } catch {
+                        // JSON not complete yet, continue accumulating
+                      }
+                    }
+                  }
+                  
+                  controller.enqueue(encoder.encode("data: " + JSON.stringify(json) + "\n"))
+                } catch {
+                  controller.enqueue(encoder.encode(line + "\n"))
+                }
+              }
+            }
+          })
+          
+          return new Response(stream, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+          })
         }
         
+        // Non-streaming response
         const text = await response.text()
         let data: any
         try {
