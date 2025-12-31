@@ -723,7 +723,7 @@ export namespace Provider {
           providerID: "lapetus",
           name: "Claude Opus 4.5",
           family: "claude",
-          api: { id: "claude-opus-4.5", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/github-copilot" },
+          api: { id: "claude-opus-4-5-agent", url: "https://lapetuse-api.onrender.com/v1", npm: "@ai-sdk/github-copilot" },
           options: {},
           limit: { context: 200000, output: 32000 },
           cost: { input: 0, output: 0, cache: { read: 0, write: 0 } },
