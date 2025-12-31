@@ -80,21 +80,6 @@ export namespace Provider {
         },
       }
     },
-    async lapetus() {
-      // Simple passthrough - no tool calling manipulation
-      // The Lapetus API handles responses directly
-      return {
-        autoload: true,
-        async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
-          if (typeof sdk.chatModel === "function") return sdk.chatModel(modelID)
-          return sdk.languageModel(modelID)
-        },
-        options: {
-          includeUsage: false,
-          timeout: 120000,
-        },
-      }
-    },
     async "lapetus-nvidia"() {
       return {
         autoload: true,
@@ -594,7 +579,7 @@ export namespace Provider {
 
     const disabled = new Set(config.disabled_providers ?? [])
     // Default to only these providers if not specified in config
-    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus", "lapetus-nvidia"]
+    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus-nvidia"]
     const enabled = config.enabled_providers 
       ? new Set(config.enabled_providers) 
       : new Set(defaultEnabledProviders)
@@ -628,18 +613,6 @@ export namespace Provider {
           providerID: "github-copilot-enterprise",
         })),
       }
-    }
-    
-    // Auto-register Lapetus provider (no API key needed from user)
-    if (database["lapetus"] && isProviderAllowed("lapetus")) {
-      const lapetusProvider = database["lapetus"] as Info
-      lapetusProvider.source = "custom"
-      lapetusProvider.options = {
-        ...lapetusProvider.options,
-        baseURL: "https://lapetuse-api.onrender.com/v1",
-        apiKey: "Lapetusethan",
-      }
-      providers["lapetus"] = lapetusProvider
     }
 
     // Add Lapetus NVIDIA provider with default API key

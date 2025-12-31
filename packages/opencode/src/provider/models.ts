@@ -80,31 +80,7 @@ export namespace ModelsDev {
     const result = await file.json().catch(() => {})
     const providers = result ? result as Record<string, Provider> : JSON.parse(await data()) as Record<string, Provider>
     
-    // Add Lapetus provider - built-in API key, no user key needed
-    providers["lapetus"] = {
-      id: "lapetus",
-      name: "Lapetus",
-      api: "https://lapetuse-api.onrender.com/v1",
-      npm: "@ai-sdk/openai-compatible",
-      env: [],
-      models: {
-        // GPT Models
-        "gpt-5": { id: "gpt-5", name: "GPT-5", family: "gpt", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
-        "gpt-5-thinking": { id: "gpt-5-thinking", name: "GPT-5 Thinking", family: "gpt", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
-        "o3": { id: "o3", name: "O3", family: "gpt", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 100000 } },
-        "o4-mini": { id: "o4-mini", name: "O4 Mini", family: "gpt", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 100000 } },
-        // Claude Models
-        "sonnet-4.5": { id: "sonnet-4.5", name: "Claude Sonnet 4.5", family: "claude", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 16384 } },
-        "sonnet-4.5-reasoning": { id: "sonnet-4.5-reasoning", name: "Claude Sonnet 4.5 Reasoning", family: "claude", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 16384 } },
-        "opus-4.5": { id: "opus-4.5", name: "Claude Opus 4.5", family: "claude", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 32000 } },
-        "opus-4.5-reasoning": { id: "opus-4.5-reasoning", name: "Claude Opus 4.5 Reasoning", family: "claude", attachment: false, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 32000 } },
-        // Grok Models
-        "grok-latest": { id: "grok-latest", name: "Grok Latest", family: "grok", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
-        "grok4": { id: "grok4", name: "Grok 4", family: "grok", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 16384 } },
-      },
-    }
-
-    // Add Lapetus NVIDIA provider
+    // Add Lapetus NVIDIA provider - uses NVIDIA API with built-in key
     providers["lapetus-nvidia"] = {
       id: "lapetus-nvidia",
       name: "Lapetus",
