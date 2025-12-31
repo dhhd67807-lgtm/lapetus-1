@@ -82,6 +82,7 @@ export namespace Provider {
     },
     async lapetus() {
       // Custom fetch that fixes missing 'index' field in tool_calls for Lapetus API
+      // Optimized for minimal lag using TransformStream
       const fixToolCallsResponse = async (input: RequestInfo | URL, init?: RequestInit) => {
         const response = await fetch(input, init)
         
@@ -90,61 +91,48 @@ export namespace Provider {
           return response
         }
 
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
-        const encoder = new TextEncoder()
+        // Use TransformStream for efficient streaming with minimal buffering
+        const transformStream = new TransformStream({
+          transform(chunk, controller) {
+            const text = new TextDecoder().decode(chunk)
+            const lines = text.split('\n')
+            let output = ''
 
-        const transformedStream = new ReadableStream({
-          async start(controller) {
-            try {
-              while (true) {
-                const { done, value } = await reader.read()
-                if (done) {
-                  controller.close()
-                  break
-                }
-
-                const text = decoder.decode(value, { stream: true })
-                const lines = text.split('\n')
-                const transformedLines: string[] = []
-
-                for (const line of lines) {
-                  if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-                    try {
-                      const jsonStr = line.slice(6)
-                      if (jsonStr.trim()) {
-                        const data = JSON.parse(jsonStr)
-                        // Fix missing index in tool_calls
-                        if (data.choices) {
-                          for (const choice of data.choices) {
-                            if (choice.delta?.tool_calls) {
-                              choice.delta.tool_calls = choice.delta.tool_calls.map((tc: any, idx: number) => ({
-                                index: tc.index ?? idx,
-                                ...tc
-                              }))
+            for (const line of lines) {
+              if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                try {
+                  const jsonStr = line.slice(6)
+                  if (jsonStr.trim()) {
+                    const data = JSON.parse(jsonStr)
+                    // Fix missing index in tool_calls
+                    if (data.choices) {
+                      for (const choice of data.choices) {
+                        if (choice.delta?.tool_calls) {
+                          for (let i = 0; i < choice.delta.tool_calls.length; i++) {
+                            if (choice.delta.tool_calls[i].index === undefined) {
+                              choice.delta.tool_calls[i].index = i
                             }
                           }
                         }
-                        transformedLines.push('data: ' + JSON.stringify(data))
                       }
-                    } catch {
-                      // If JSON parsing fails, pass through unchanged
-                      transformedLines.push(line)
                     }
-                  } else {
-                    transformedLines.push(line)
+                    output += 'data: ' + JSON.stringify(data) + '\n'
                   }
+                } catch {
+                  output += line + '\n'
                 }
-
-                controller.enqueue(encoder.encode(transformedLines.join('\n')))
+              } else {
+                output += line + '\n'
               }
-            } catch (e) {
-              controller.error(e)
+            }
+
+            if (output) {
+              controller.enqueue(new TextEncoder().encode(output))
             }
           }
         })
 
-        return new Response(transformedStream, {
+        return new Response(response.body.pipeThrough(transformStream), {
           status: response.status,
           statusText: response.statusText,
           headers: response.headers
