@@ -81,6 +81,63 @@ export namespace Provider {
       }
     },
     async lapetus() {
+      // Custom fetch that disables streaming for Lapetus API (tool calls don't work with streaming)
+      // and fixes missing 'index' field in tool_calls
+      const lapetusCustomFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        // Modify request to disable streaming since Lapetus API doesn't support tool calls in streaming mode
+        let modifiedInit = init
+        if (init?.body && typeof init.body === 'string') {
+          try {
+            const body = JSON.parse(init.body)
+            // Only disable streaming if tools are present
+            if (body.tools && body.tools.length > 0) {
+              body.stream = false
+              modifiedInit = {
+                ...init,
+                body: JSON.stringify(body)
+              }
+            }
+          } catch {
+            // If body parsing fails, continue with original request
+          }
+        }
+
+        const response = await fetch(input, modifiedInit)
+        
+        // For non-streaming responses, fix missing index in tool_calls
+        const contentType = response.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          const text = await response.text()
+          try {
+            const data = JSON.parse(text)
+            if (data.choices) {
+              for (const choice of data.choices) {
+                if (choice.message?.tool_calls) {
+                  for (let i = 0; i < choice.message.tool_calls.length; i++) {
+                    if (choice.message.tool_calls[i].index === undefined) {
+                      choice.message.tool_calls[i].index = i
+                    }
+                  }
+                }
+              }
+            }
+            return new Response(JSON.stringify(data), {
+              status: response.status,
+              statusText: response.statusText,
+              headers: new Headers({ 'content-type': 'application/json' })
+            })
+          } catch {
+            return new Response(text, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: response.headers
+            })
+          }
+        }
+
+        return response
+      }
+
       return {
         autoload: true,
         async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
@@ -94,6 +151,7 @@ export namespace Provider {
         options: {
           includeUsage: false,
           timeout: 120000, // 2 minutes timeout for cold start
+          fetch: lapetusCustomFetch,
         },
       }
     },
