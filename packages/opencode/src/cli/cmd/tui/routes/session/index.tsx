@@ -111,7 +111,15 @@ export function Session() {
   const permissions = createMemo(() => sync.data.permission[route.sessionID] ?? [])
 
   const pending = createMemo(() => {
-    return messages().findLast((x) => x.role === "assistant" && !x.time.completed)?.id
+    // Find the last assistant message that hasn't completed
+    // But only if it's the very last message (no newer messages after it)
+    const msgs = messages()
+    const lastMsg = msgs.at(-1)
+    if (!lastMsg) return undefined
+    if (lastMsg.role === "assistant" && !lastMsg.time.completed) {
+      return lastMsg.id
+    }
+    return undefined
   })
 
   const lastAssistant = createMemo(() => {
