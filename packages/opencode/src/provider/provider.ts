@@ -96,6 +96,22 @@ export namespace Provider {
         },
       }
     },
+    async "lapetus-api"() {
+      return {
+        autoload: true,
+        async getModel(sdk: any, modelID: string, _options?: Record<string, any>) {
+          // Use chatModel method for @ai-sdk/openai-compatible npm package
+          if (typeof sdk.chatModel === "function") {
+            return sdk.chatModel(modelID)
+          }
+          // Fallback to languageModel
+          return sdk.languageModel(modelID)
+        },
+        options: {
+          includeUsage: false,
+        },
+      }
+    },
     async opencode(input) {
       const hasKey = await (async () => {
         const env = Env.all()
@@ -579,7 +595,7 @@ export namespace Provider {
 
     const disabled = new Set(config.disabled_providers ?? [])
     // Default to only these providers if not specified in config
-    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus-nvidia"]
+    const defaultEnabledProviders = ["groq", "nvidia", "opencode", "lapetus-nvidia", "lapetus-api"]
     const enabled = config.enabled_providers 
       ? new Set(config.enabled_providers) 
       : new Set(defaultEnabledProviders)
@@ -626,6 +642,19 @@ export namespace Provider {
         apiKey: nvidiaDefaultApiKey,
       }
       providers["lapetus-nvidia"] = lapetusNvidiaProvider
+    }
+
+    // Add Lapetus API provider with default API key
+    const lapetusApiDefaultKey = "Lapetusethan"
+    if (database["lapetus-api"] && isProviderAllowed("lapetus-api")) {
+      const lapetusApiProvider = database["lapetus-api"] as Info
+      lapetusApiProvider.source = "custom"
+      lapetusApiProvider.options = {
+        ...lapetusApiProvider.options,
+        baseURL: "https://lapetuse-api.onrender.com/v1",
+        apiKey: lapetusApiDefaultKey,
+      }
+      providers["lapetus-api"] = lapetusApiProvider
     }
 
     function mergeProvider(providerID: string, provider: Partial<Info>) {

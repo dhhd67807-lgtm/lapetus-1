@@ -95,6 +95,18 @@ export namespace ModelsDev {
         "qwen/qwen3-coder-480b-a35b-instruct": { id: "qwen/qwen3-coder-480b-a35b-instruct", name: "Qwen3 Coder 480B", family: "qwen", attachment: false, reasoning: false, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 128000, output: 8192 } },
       },
     }
+
+    // Add Lapetus API provider - uses Render API gateway with built-in key
+    providers["lapetus-api"] = {
+      id: "lapetus-api",
+      name: "Lapetus API",
+      api: "https://lapetuse-api.onrender.com/v1",
+      npm: "@ai-sdk/openai-compatible",
+      env: ["LAPETUS_API_KEY"],
+      models: {
+        "ent-claude-4-opus-agent": { id: "ent-claude-4-opus-agent", name: "Claude 4 Opus Agent", family: "claude", attachment: true, reasoning: true, temperature: true, tool_call: true, release_date: "2025-01-01", options: {}, limit: { context: 200000, output: 8192 }, modalities: { input: ["text", "image"], output: ["text"] } },
+      },
+    }
     
     return providers
   }
